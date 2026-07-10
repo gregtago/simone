@@ -157,8 +157,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">▤</span>
-          <span className="brand-name">Simone</span>
+          <img className="brand-logo" src="./logo-simone.png" alt="Simone" />
           <span className="brand-sub">Lecteur PDF · OCR sélectif</span>
         </div>
         <div className="topbar-actions">
@@ -231,6 +230,7 @@ export default function App() {
           ) : (
             <div className="welcome">
               <div className="welcome-card">
+                <img className="welcome-logo" src="./logo-simone.png" alt="Simone" />
                 <div className="welcome-title">Ouvrez un ou plusieurs PDF</div>
                 <p className="welcome-p">
                   Surlignez une zone à la souris : le texte est extrait de la couche du PDF s’il existe,
