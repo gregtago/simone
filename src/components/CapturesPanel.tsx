@@ -1,10 +1,12 @@
 import type { Capture } from '../lib/types';
+import type { ExportFormat } from '../lib/exporter';
 
 interface Props {
   captures: Capture[];
   onRemove: (id: string) => void;
   onClear: () => void;
   onToast: (msg: string) => void;
+  onExport: (format: ExportFormat) => void;
 }
 
 const STATUS_LABEL: Record<Capture['status'], string> = {
@@ -14,7 +16,8 @@ const STATUS_LABEL: Record<Capture['status'], string> = {
   erreur: 'erreur',
 };
 
-export function CapturesPanel({ captures, onRemove, onClear, onToast }: Props) {
+export function CapturesPanel({ captures, onRemove, onClear, onToast, onExport }: Props) {
+  const hasContent = captures.some((c) => c.text);
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -72,6 +75,16 @@ export function CapturesPanel({ captures, onRemove, onClear, onToast }: Props) {
             </li>
           ))}
         </ul>
+      )}
+
+      {hasContent && (
+        <div className="panel-foot">
+          <span className="section-label">Exporter</span>
+          <div className="panel-foot-actions">
+            <button className="btn-ghost" onClick={() => onExport('txt')}>.txt</button>
+            <button className="btn-ghost" onClick={() => onExport('md')}>.md</button>
+          </div>
+        </div>
       )}
     </aside>
   );

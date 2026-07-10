@@ -23,8 +23,11 @@ IA ne parcourt seule des centaines de pages.
   (tesseract.js en WebAssembly, modèles français + anglais) tournent
   entièrement dans le navigateur. **Aucun document n'est envoyé sur Internet** —
   indispensable pour le secret professionnel. Fonctionne hors-ligne.
-- **Plusieurs PDF en onglets**, zoom, ordre de lecture reconstitué, copie
-  d'une extraction ou de toutes.
+- **Plusieurs PDF en onglets**, zoom, ordre de lecture reconstitué.
+- **Bloc-notes partagé + export.** Les extractions de tous les PDF ouverts
+  s'accumulent dans le panneau de droite (chacune étiquetée `document · page`).
+  Un export en bas génère un fichier **`.txt` ou `.md`**, regroupé par document
+  puis par page, avec la méthode et le taux de confiance.
 
 Inspiration : [NormCap](https://github.com/dynobo/normcap), transposé du geste
 « capture d'écran » vers « zone d'un PDF ».
@@ -69,5 +72,5 @@ venu.
 ## Pistes suivantes
 
 - Renvoyer une extraction vers un dossier/tâche henri.
-- Historique/export des extractions (CSV, presse-papier structuré).
+- Export CSV (une ligne par extraction) pour retri dans un tableur.
 - Empaquetage en application de bureau (Tauri) pour un vrai lecteur natif.

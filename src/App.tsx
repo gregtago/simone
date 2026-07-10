@@ -3,6 +3,7 @@ import { loadPdf } from './lib/pdf';
 import { ocr } from './lib/ocr';
 import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
+import { exportCaptures, type ExportFormat } from './lib/exporter';
 import type { Capture, PdfDoc } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -125,6 +126,12 @@ export default function App() {
   const removeCapture = (id: string) => setCaptures((c) => c.filter((x) => x.id !== id));
   const clearCaptures = () => setCaptures([]);
 
+  const handleExport = (format: ExportFormat) => {
+    const docRefs = docs.map((d) => ({ id: d.id, name: d.name }));
+    const ok = exportCaptures(format, captures, docRefs);
+    showToast(ok ? `Export ${format === 'md' ? '.md' : '.txt'} généré` : 'Rien à exporter');
+  };
+
   const zoomStep = (dir: 1 | -1) => {
     setScale((s) => {
       const i = ZOOMS.findIndex((z) => z >= s);
@@ -204,7 +211,13 @@ export default function App() {
             </div>
           )}
         </section>
-        <CapturesPanel captures={captures} onRemove={removeCapture} onClear={clearCaptures} onToast={showToast} />
+        <CapturesPanel
+          captures={captures}
+          onRemove={removeCapture}
+          onClear={clearCaptures}
+          onToast={showToast}
+          onExport={handleExport}
+        />
       </main>
 
       {toast && <div className="toast">{toast}</div>}
