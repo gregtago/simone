@@ -93,12 +93,13 @@ button { font-family: inherit; cursor: pointer; }
 
 .page-wrap { position: relative; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
 .page-canvas { display: block; }
-.page-overlay { position: absolute; inset: 0; cursor: crosshair; }
-.marquee {
-  position: absolute;
-  border: 1.5px solid var(--accent);
-  background: rgba(47, 110, 255, 0.12);
-  pointer-events: none;
+/* Calque de surlignage : le jaune se comporte comme de l'encre de marqueur
+   (mix-blend-mode: multiply) — il jaunit le fond blanc mais laisse le texte
+   noir lisible. S'estompe après la capture via la transition d'opacité. */
+.paint-layer {
+  position: absolute; inset: 0; cursor: crosshair;
+  mix-blend-mode: multiply;
+  transition: opacity 300ms ease;
 }
 .page-label {
   position: absolute; top: 4px; right: 6px;

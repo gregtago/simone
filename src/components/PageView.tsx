@@ -19,22 +19,20 @@ interface Props {
   onSelect: (p: SelectionPayload) => void;
 }
 
-interface Marquee {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-}
-
-const MIN_SIZE = 6;
+// Largeur du trait de surligneur, en pixels du canvas rendu.
+const BRUSH = 22;
+// En dessous de ce déplacement, c'est un simple clic : on n'extrait rien.
+const MIN_DRAG = 5;
 
 export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const paintRef = useRef<HTMLCanvasElement>(null);
   const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent; pageProxy: PDFPageProxy } | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
-  const [marquee, setMarquee] = useState<Marquee | null>(null);
   const draggingRef = useRef(false);
+  const pointsRef = useRef<{ x: number; y: number }[]>([]);
 
+  // Rendu de la page.
   useEffect(() => {
     let cancelled = false;
     let renderTask: { cancel: () => void } | null = null;
@@ -68,6 +66,15 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
     };
   }, [pdf, pageNumber, scale]);
 
+  // Le calque de peinture suit la taille de la page.
+  useEffect(() => {
+    const pc = paintRef.current;
+    if (pc && dims) {
+      pc.width = dims.w;
+      pc.height = dims.h;
+    }
+  }, [dims]);
+
   const pointFromEvent = (e: React.PointerEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     return {
@@ -76,33 +83,86 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
     };
   };
 
+  // Redessine tout le trait à chaque mouvement : une seule passe d'encre, donc
+  // une opacité uniforme (pas d'accumulation aux recouvrements).
+  const redraw = () => {
+    const pc = paintRef.current;
+    if (!pc) return;
+    const ctx = pc.getContext('2d')!;
+    ctx.clearRect(0, 0, pc.width, pc.height);
+    const pts = pointsRef.current;
+    if (!pts.length) return;
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.5)';
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.5)';
+    ctx.lineWidth = BRUSH;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (pts.length === 1) {
+      ctx.beginPath();
+      ctx.arc(pts[0].x, pts[0].y, BRUSH / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+    }
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     draggingRef.current = true;
-    const p = pointFromEvent(e);
-    setMarquee({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+    if (paintRef.current) paintRef.current.style.opacity = '1';
+    pointsRef.current = [pointFromEvent(e)];
+    redraw();
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!draggingRef.current) return;
-    const p = pointFromEvent(e);
-    setMarquee((m) => (m ? { ...m, x1: p.x, y1: p.y } : m));
+    pointsRef.current.push(pointFromEvent(e));
+    redraw();
   };
 
   const onPointerUp = () => {
     if (!draggingRef.current) return;
     draggingRef.current = false;
-    const m = marquee;
-    setMarquee(null);
-    if (!m || !dataRef.current || !canvasRef.current) return;
+    const pts = pointsRef.current;
+
+    // Le trait reste visible un instant puis s'estompe.
+    const pc = paintRef.current;
+    if (pc) {
+      pc.style.opacity = '0';
+      window.setTimeout(() => {
+        pc.getContext('2d')?.clearRect(0, 0, pc.width, pc.height);
+        pc.style.opacity = '1';
+      }, 350);
+    }
+
+    if (!pts.length || !dataRef.current || !canvasRef.current) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of pts) {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    }
+    // Simple clic (pas de glissement) → on ignore.
+    if (maxX - minX < MIN_DRAG && maxY - minY < MIN_DRAG) return;
+
+    const cw = canvasRef.current.width;
+    const ch = canvasRef.current.height;
+    const r = BRUSH / 2;
+    const x = Math.max(0, minX - r);
+    const y = Math.max(0, minY - r);
     const rect: Rect = {
-      x: Math.min(m.x0, m.x1),
-      y: Math.min(m.y0, m.y1),
-      w: Math.abs(m.x1 - m.x0),
-      h: Math.abs(m.y1 - m.y0),
+      x,
+      y,
+      w: Math.min(maxX - minX + BRUSH, cw - x),
+      h: Math.min(maxY - minY + BRUSH, ch - y),
     };
-    if (rect.w < MIN_SIZE || rect.h < MIN_SIZE) return;
+
     onSelect({
       page: pageNumber,
       pageProxy: dataRef.current.pageProxy,
@@ -111,33 +171,19 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
       viewport: dataRef.current.viewport,
       textContent: dataRef.current.textContent,
     });
+    pointsRef.current = [];
   };
-
-  const box = marquee
-    ? {
-        left: Math.min(marquee.x0, marquee.x1),
-        top: Math.min(marquee.y0, marquee.y1),
-        width: Math.abs(marquee.x1 - marquee.x0),
-        height: Math.abs(marquee.y1 - marquee.y0),
-      }
-    : null;
 
   return (
     <div className="page-wrap" style={dims ? { width: dims.w, height: dims.h } : undefined}>
       <canvas ref={canvasRef} className="page-canvas" />
-      <div
-        className="page-overlay"
+      <canvas
+        ref={paintRef}
+        className="paint-layer"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-      >
-        {box && (
-          <div
-            className="marquee"
-            style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
-          />
-        )}
-      </div>
+      />
       <div className="page-label">Page {pageNumber}</div>
     </div>
   );
