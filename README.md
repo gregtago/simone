@@ -76,6 +76,5 @@ venu.
 
 ## Pistes suivantes
 
-- Renvoyer une extraction vers un dossier/tâche henri.
-- Export CSV (une ligne par extraction) pour retri dans un tableur.
+- Calibrer le prétraitement OCR sur de vrais documents scannés.
 - Empaquetage en application de bureau (Tauri) pour un vrai lecteur natif.
