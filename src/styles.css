@@ -48,6 +48,19 @@ button { font-family: inherit; cursor: pointer; }
 .zoom { display: flex; align-items: center; gap: 2px; }
 .zoom-val { font-size: 12px; color: var(--text-2); min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; }
 
+/* Sélecteur d'outil (surligneur / cadre) — contrôle segmenté. */
+.tool-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.tool-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg); color: var(--text-2); border: none;
+  border-right: 1px solid var(--border);
+  padding: 5px 10px; font-size: 12.5px; transition: color 80ms, background 80ms;
+}
+.tool-btn:last-child { border-right: none; }
+.tool-btn:hover { background: var(--bg-hover); color: var(--text); }
+.tool-active, .tool-active:hover { background: var(--text); color: #fff; }
+.tool-glyph { font-size: 13px; line-height: 1; }
+
 .btn-primary {
   background: #111827; color: #fff; border: none;
   padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;

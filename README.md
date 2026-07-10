@@ -58,9 +58,13 @@ relancer `node scripts/vendor-tesseract.mjs` complète l'installation.
 ## Utilisation
 
 1. **Ouvrir des PDF** (bouton en haut à droite, sélection multiple possible).
-2. **Passer le surligneur** (glisser la souris) sur le passage à extraire — un
-   trait de marqueur jaune suit le curseur, puis s'estompe.
-3. Le texte apparaît dans le panneau de droite, avec la méthode utilisée
+2. **Choisir l'outil** (en haut à droite, ou touches `S` / `C`) :
+   - **Surligneur** (`S`) — trait de marqueur jaune à main levée, pour passer
+     vite sur une ligne ;
+   - **Cadre** (`C`) — rectangle en pointillés, pour délimiter précisément un
+     bloc, un tampon ou un tableau.
+3. **Marquer le passage** à extraire en glissant la souris.
+4. Le texte apparaît dans le panneau de droite, avec la méthode utilisée
    (`texte natif` ou `OCR` + taux de confiance). Copier ou exporter au besoin.
 
 ## Statut

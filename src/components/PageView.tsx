@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, PageViewport } from 'pdfjs-dist';
 import type { TextContent } from 'pdfjs-dist/types/src/display/api';
-import type { Rect } from '../lib/types';
+import type { Rect, Tool } from '../lib/types';
 
 export interface SelectionPayload {
   page: number;
@@ -16,6 +16,7 @@ interface Props {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
+  tool: Tool;
   onSelect: (p: SelectionPayload) => void;
 }
 
@@ -24,7 +25,7 @@ const BRUSH = 22;
 // En dessous de ce déplacement, c'est un simple clic : on n'extrait rien.
 const MIN_DRAG = 5;
 
-export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
+export function PageView({ pdf, pageNumber, scale, tool, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef<HTMLCanvasElement>(null);
   const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent; pageProxy: PDFPageProxy } | null>(null);
@@ -83,8 +84,9 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
     };
   };
 
-  // Redessine tout le trait à chaque mouvement : une seule passe d'encre, donc
-  // une opacité uniforme (pas d'accumulation aux recouvrements).
+  // Redessine à chaque mouvement. Surligneur : trait d'encre à main levée
+  // (une seule passe, opacité uniforme). Cadre : rectangle en pointillés entre
+  // le point de départ et le point courant.
   const redraw = () => {
     const pc = paintRef.current;
     if (!pc) return;
@@ -92,6 +94,24 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
     ctx.clearRect(0, 0, pc.width, pc.height);
     const pts = pointsRef.current;
     if (!pts.length) return;
+
+    if (tool === 'cadre') {
+      const a = pts[0];
+      const b = pts[pts.length - 1];
+      const x = Math.min(a.x, b.x);
+      const y = Math.min(a.y, b.y);
+      const w = Math.abs(b.x - a.x);
+      const h = Math.abs(b.y - a.y);
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.18)';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = 'rgba(202, 138, 4, 0.95)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(x + 0.75, y + 0.75, w, h);
+      ctx.setLineDash([]);
+      return;
+    }
+
     ctx.fillStyle = 'rgba(250, 204, 21, 0.5)';
     ctx.strokeStyle = 'rgba(250, 204, 21, 0.5)';
     ctx.lineWidth = BRUSH;
@@ -153,15 +173,21 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
 
     const cw = canvasRef.current.width;
     const ch = canvasRef.current.height;
-    const r = BRUSH / 2;
-    const x = Math.max(0, minX - r);
-    const y = Math.max(0, minY - r);
-    const rect: Rect = {
-      x,
-      y,
-      w: Math.min(maxX - minX + BRUSH, cw - x),
-      h: Math.min(maxY - minY + BRUSH, ch - y),
-    };
+    let rect: Rect;
+    if (tool === 'cadre') {
+      // Rectangle strict entre le point de départ et le point d'arrivée.
+      const a = pts[0];
+      const b = pts[pts.length - 1];
+      const x = Math.max(0, Math.min(a.x, b.x));
+      const y = Math.max(0, Math.min(a.y, b.y));
+      rect = { x, y, w: Math.min(Math.abs(b.x - a.x), cw - x), h: Math.min(Math.abs(b.y - a.y), ch - y) };
+    } else {
+      // Surligneur : boîte englobante du trait, élargie du rayon du pinceau.
+      const r = BRUSH / 2;
+      const x = Math.max(0, minX - r);
+      const y = Math.max(0, minY - r);
+      rect = { x, y, w: Math.min(maxX - minX + BRUSH, cw - x), h: Math.min(maxY - minY + BRUSH, ch - y) };
+    }
 
     onSelect({
       page: pageNumber,

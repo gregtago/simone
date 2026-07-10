@@ -1,10 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPdf } from './lib/pdf';
 import { ocr } from './lib/ocr';
 import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
-import type { Capture, PdfDoc } from './lib/types';
+import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
@@ -15,6 +15,7 @@ export default function App() {
   const [docs, setDocs] = useState<PdfDoc[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
+  const [tool, setTool] = useState<Tool>('surligneur');
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,6 +28,18 @@ export default function App() {
     setToast(msg);
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  // Raccourcis : S = surligneur, C = cadre.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+      if (e.key === 's' || e.key === 'S') setTool('surligneur');
+      else if (e.key === 'c' || e.key === 'C') setTool('cadre');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const openFiles = useCallback(
@@ -150,6 +163,24 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           {active && (
+            <div className="tool-switch" role="group" aria-label="Outil de sélection">
+              <button
+                className={`tool-btn${tool === 'surligneur' ? ' tool-active' : ''}`}
+                onClick={() => setTool('surligneur')}
+                title="Surligneur — trait à main levée (S)"
+              >
+                <span className="tool-glyph">🖍</span> Surligneur
+              </button>
+              <button
+                className={`tool-btn${tool === 'cadre' ? ' tool-active' : ''}`}
+                onClick={() => setTool('cadre')}
+                title="Cadre — rectangle précis (C)"
+              >
+                <span className="tool-glyph">⬚</span> Cadre
+              </button>
+            </div>
+          )}
+          {active && (
             <div className="zoom">
               <button className="btn-ghost" onClick={() => zoomStep(-1)} aria-label="Dézoomer">−</button>
               <span className="zoom-val">{Math.round(scale * 100)}%</span>
@@ -196,7 +227,7 @@ export default function App() {
       <main className="workspace">
         <section className="viewer">
           {active ? (
-            <PdfDocumentView doc={active} scale={scale} onSelect={handleSelect} />
+            <PdfDocumentView doc={active} scale={scale} tool={tool} onSelect={handleSelect} />
           ) : (
             <div className="welcome">
               <div className="welcome-card">

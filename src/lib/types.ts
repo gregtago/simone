@@ -7,6 +7,9 @@ export interface PdfDoc {
   numPages: number;
 }
 
+/** Outil de sélection actif. */
+export type Tool = 'surligneur' | 'cadre';
+
 /** Rectangle de sélection, en pixels du canvas rendu (device px). */
 export interface Rect {
   x: number;
