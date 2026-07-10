@@ -26,5 +26,7 @@ export interface Capture {
   text: string;
   /** Confiance moyenne de l'OCR (0–100), si applicable. */
   confidence?: number;
+  /** Vignette (data URL) de la zone capturée, pour vérification (OCR uniquement). */
+  thumb?: string;
   createdAt: number;
 }

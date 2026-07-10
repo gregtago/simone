@@ -14,6 +14,11 @@ IA ne parcourt seule des centaines de pages.
   une couche texte (acte natif, PDF généré), le texte est lu directement —
   instantané et parfait, sans OCR. Ce n'est que sur une image scannée (pas de
   texte sélectionnable) que l'OCR **Tesseract** prend le relais.
+- **OCR soigné.** La zone n'est pas recadrée depuis l'affichage : elle est
+  **re-rendue à ~300 DPI directement depuis le PDF**, prétraitée (niveaux de gris
+  + étirement de contraste), et Tesseract est réglé selon la forme de la zone
+  (ligne unique ou bloc). Une **vignette** de la zone accompagne chaque
+  extraction pour vérification d'un coup d'œil.
 - **100 % sur le poste.** Le rendu (pdf.js) comme la reconnaissance de texte
   (tesseract.js en WebAssembly, modèles français + anglais) tournent
   entièrement dans le navigateur. **Aucun document n'est envoyé sur Internet** —
@@ -64,6 +69,5 @@ venu.
 ## Pistes suivantes
 
 - Renvoyer une extraction vers un dossier/tâche henri.
-- Rogner l'image OCR plus finement (re-rendu haute résolution de la seule zone).
 - Historique/export des extractions (CSV, presse-papier structuré).
 - Empaquetage en application de bureau (Tauri) pour un vrai lecteur natif.

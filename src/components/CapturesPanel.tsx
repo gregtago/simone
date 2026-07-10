@@ -59,6 +59,9 @@ export function CapturesPanel({ captures, onRemove, onClear, onToast }: Props) {
                   {c.confidence != null && c.status === 'ocr' ? ` · ${c.confidence}%` : ''}
                 </span>
               </div>
+              {c.thumb && (
+                <img className="capture-thumb" src={c.thumb} alt="Zone capturée" />
+              )}
               <div className="capture-text">
                 {c.status === 'en-cours' ? <span className="muted">Reconnaissance en cours…</span> : c.text || <span className="muted">— vide —</span>}
               </div>

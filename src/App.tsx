@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { loadPdf } from './lib/pdf';
 import { ocr } from './lib/ocr';
-import { cropRegion, looksLikeText, textLayerInRect } from './lib/extract';
+import { looksLikeText, textLayerInRect } from './lib/extract';
+import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import type { Capture, PdfDoc } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -99,12 +100,17 @@ export default function App() {
         ...c,
       ]);
       try {
-        const crop = cropRegion(p.canvas, p.rect, 2);
-        const res = await ocr(crop);
+        // Re-rendu haute résolution de la seule zone, puis prétraitement.
+        const hi = await renderRegionForOcr(p.pageProxy, p.viewport, p.rect);
+        const thumb = thumbnail(hi);
+        preprocessForOcr(hi);
+        // Une zone nettement plus large que haute est probablement une ligne unique.
+        const mode = p.rect.w / p.rect.h > 8 ? 'ligne' : 'bloc';
+        const res = await ocr(hi, mode);
         setCaptures((c) =>
           c.map((x) =>
             x.id === id
-              ? { ...x, status: res.text ? 'ocr' : 'erreur', text: res.text, confidence: res.confidence }
+              ? { ...x, status: res.text ? 'ocr' : 'erreur', text: res.text, confidence: res.confidence, thumb }
               : x,
           ),
         );

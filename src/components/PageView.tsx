@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PDFDocumentProxy, PageViewport } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy, PageViewport } from 'pdfjs-dist';
 import type { TextContent } from 'pdfjs-dist/types/src/display/api';
 import type { Rect } from '../lib/types';
 
 export interface SelectionPayload {
   page: number;
+  pageProxy: PDFPageProxy;
   rect: Rect;
   canvas: HTMLCanvasElement;
   viewport: PageViewport;
@@ -29,7 +30,7 @@ const MIN_SIZE = 6;
 
 export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent } | null>(null);
+  const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent; pageProxy: PDFPageProxy } | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const draggingRef = useRef(false);
@@ -58,7 +59,7 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
       if (cancelled) return;
       const textContent = await page.getTextContent();
       if (cancelled) return;
-      dataRef.current = { viewport, textContent };
+      dataRef.current = { viewport, textContent, pageProxy: page };
     })();
 
     return () => {
@@ -104,6 +105,7 @@ export function PageView({ pdf, pageNumber, scale, onSelect }: Props) {
     if (rect.w < MIN_SIZE || rect.h < MIN_SIZE) return;
     onSelect({
       page: pageNumber,
+      pageProxy: dataRef.current.pageProxy,
       rect,
       canvas: canvasRef.current,
       viewport: dataRef.current.viewport,

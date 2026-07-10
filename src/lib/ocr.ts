@@ -1,4 +1,4 @@
-import { createWorker, type Worker } from 'tesseract.js';
+import { createWorker, PSM, type Worker } from 'tesseract.js';
 
 // URLs des assets locaux (vendorés dans public/ par scripts/vendor-tesseract.mjs).
 // Si absents (ex : vendoring échoué), on laisse tesseract.js retomber sur son CDN.
@@ -45,8 +45,18 @@ export interface OcrResult {
   confidence: number;
 }
 
-export async function ocr(image: HTMLCanvasElement): Promise<OcrResult> {
+/** 'ligne' : la zone est une seule ligne ; 'bloc' : un paragraphe / plusieurs lignes. */
+export type OcrMode = 'ligne' | 'bloc';
+
+export async function ocr(image: HTMLCanvasElement, mode: OcrMode = 'bloc'): Promise<OcrResult> {
   const worker = await getOcrWorker();
+  // Le mode de segmentation adapté à une sélection rectangulaire donne de bien
+  // meilleurs résultats que le mode « auto » (pensé pour une page entière).
+  await worker.setParameters({
+    tessedit_pageseg_mode: mode === 'ligne' ? PSM.SINGLE_LINE : PSM.SINGLE_BLOCK,
+    preserve_interword_spaces: '1',
+    user_defined_dpi: '300',
+  });
   const { data } = await worker.recognize(image);
   return { text: data.text.trim(), confidence: Math.round(data.confidence) };
 }
