@@ -80,27 +80,35 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn-help:hover { color: var(--text); background: var(--bg-hover); }
 
-/* ---------- Tabs ---------- */
-.tabs {
-  display: flex; align-items: stretch; gap: 0;
-  background: var(--bg-subtle); border-bottom: 1px solid var(--border);
-  overflow-x: auto; min-height: 34px;
+/* ---------- Colonne des documents (onglets verticaux) ---------- */
+.doc-sidebar {
+  width: 214px; min-width: 214px;
+  background: var(--bg-subtle); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; min-height: 0;
 }
-.tab {
+.doc-sidebar-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.doc-list { list-style: none; margin: 0; padding: 4px; overflow: auto; flex: 1; }
+.doc-item {
   display: flex; align-items: center; gap: 6px;
-  padding: 0 10px 0 12px; max-width: 220px;
-  border-right: 1px solid var(--border);
+  padding: 7px 8px; border-radius: 6px;
   font-size: 12.5px; color: var(--text-2);
-  cursor: pointer; user-select: none; white-space: nowrap;
+  cursor: pointer; user-select: none;
 }
-.tab:hover { background: var(--bg-hover); }
-.tab-active { background: var(--bg); color: var(--text); font-weight: 500; box-shadow: inset 0 -2px 0 var(--accent); }
-.tab-name { overflow: hidden; text-overflow: ellipsis; }
-.tab-close {
-  background: none; border: none; color: var(--text-3); font-size: 11px;
-  padding: 2px 4px; border-radius: 4px; line-height: 1;
+.doc-item:hover { background: var(--bg-hover); color: var(--text); }
+.doc-item-active, .doc-item-active:hover {
+  background: var(--bg); color: var(--text); font-weight: 500;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
-.tab-close:hover { background: var(--bg-active); color: var(--text); }
+.doc-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-item-close {
+  opacity: 0; background: none; border: none; color: var(--text-3);
+  font-size: 11px; padding: 2px 4px; border-radius: 4px; line-height: 1;
+}
+.doc-item:hover .doc-item-close { opacity: 1; }
+.doc-item-close:hover { background: var(--bg-active); color: var(--text); }
 
 /* ---------- Workspace ---------- */
 .workspace { flex: 1; display: flex; min-height: 0; }

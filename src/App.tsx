@@ -110,6 +110,13 @@ export default function App() {
     [],
   );
 
+  // Ferme tous les PDF. On conserve le bloc-notes (extractions) : il peut encore
+  // servir à copier ou exporter après fermeture des documents.
+  const closeAll = useCallback(() => {
+    setDocs([]);
+    setActiveId(null);
+  }, []);
+
   const handleSelect = useCallback(
     async (p: SelectionPayload) => {
       if (!active) return;
@@ -238,27 +245,36 @@ export default function App() {
         </div>
       </header>
 
-      {docs.length > 0 && (
-        <nav className="tabs">
-          {docs.map((d) => (
-            <div key={d.id} className={`tab${d.id === activeId ? ' tab-active' : ''}`} onClick={() => setActiveId(d.id)}>
-              <span className="tab-name" title={d.name}>{d.name}</span>
-              <button
-                className="tab-close"
-                aria-label="Fermer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeDoc(d.id);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </nav>
-      )}
-
       <main className="workspace">
+        {docs.length > 0 && (
+          <aside className="doc-sidebar">
+            <div className="doc-sidebar-head">
+              <span className="section-label">Documents</span>
+              <button className="btn-ghost" onClick={closeAll} title="Fermer tous les PDF">Fermer tous</button>
+            </div>
+            <ul className="doc-list">
+              {docs.map((d) => (
+                <li
+                  key={d.id}
+                  className={`doc-item${d.id === activeId ? ' doc-item-active' : ''}`}
+                  onClick={() => setActiveId(d.id)}
+                >
+                  <span className="doc-item-name" title={d.name}>{d.name}</span>
+                  <button
+                    className="doc-item-close"
+                    aria-label="Fermer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeDoc(d.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
         <section className="viewer">
           {active ? (
             <PdfDocumentView doc={active} scale={scale} tool={tool} onSelect={handleSelect} />
