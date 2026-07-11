@@ -15,7 +15,7 @@ export default function App() {
   const [docs, setDocs] = useState<PdfDoc[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
-  const [tool, setTool] = useState<Tool>('surligneur');
+  const [tool, setTool] = useState<Tool>('cadre');
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
