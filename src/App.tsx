@@ -16,6 +16,13 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
   const [tool, setTool] = useState<Tool>('surligneur');
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('simone-intro-vue') !== '1';
+    } catch {
+      return true;
+    }
+  });
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -29,6 +36,31 @@ export default function App() {
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 2600);
   }, []);
+
+  // Copie automatique de chaque texte extrait. La copie après OCR (asynchrone)
+  // peut être refusée par le navigateur si l'activation utilisateur a expiré :
+  // on le signale doucement, le bouton « Copier » reste disponible.
+  const copyToClipboard = useCallback(
+    async (text: string) => {
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast('Copié');
+      } catch {
+        showToast('Texte extrait (copie auto indisponible)');
+      }
+    },
+    [showToast],
+  );
+
+  const dismissIntro = () => {
+    try {
+      localStorage.setItem('simone-intro-vue', '1');
+    } catch {
+      /* ignore */
+    }
+    setShowIntro(false);
+  };
 
   // Raccourcis : S = surligneur, C = cadre.
   useEffect(() => {
@@ -96,6 +128,7 @@ export default function App() {
           },
           ...c,
         ]);
+        copyToClipboard(native);
         return;
       }
 
@@ -128,12 +161,13 @@ export default function App() {
               : x,
           ),
         );
+        if (res.text) copyToClipboard(res.text);
       } catch {
         setCaptures((c) => c.map((x) => (x.id === id ? { ...x, status: 'erreur' } : x)));
         showToast('⚠ Échec de l’OCR');
       }
     },
-    [active, showToast],
+    [active, showToast, copyToClipboard],
   );
 
   const removeCapture = (id: string) => setCaptures((c) => c.filter((x) => x.id !== id));
@@ -186,6 +220,7 @@ export default function App() {
               <button className="btn-ghost" onClick={() => zoomStep(1)} aria-label="Zoomer">+</button>
             </div>
           )}
+          <button className="btn-help" onClick={() => setShowIntro(true)} title="Aide / à propos" aria-label="Aide">?</button>
           <button className="btn-primary" onClick={() => fileRef.current?.click()} disabled={busy}>
             {busy ? 'Ouverture…' : 'Ouvrir des PDF'}
           </button>
@@ -232,11 +267,6 @@ export default function App() {
               <div className="welcome-card">
                 <img className="welcome-logo" src="./logo-simone.png" alt="Simone" />
                 <div className="welcome-title">Ouvrez un ou plusieurs PDF</div>
-                <p className="welcome-p">
-                  Surlignez une zone à la souris : le texte est extrait de la couche du PDF s’il existe,
-                  sinon reconnu par OCR. <strong>Tout se passe sur votre poste</strong> — aucun document
-                  n’est envoyé sur Internet.
-                </p>
                 <button className="btn-primary" onClick={() => fileRef.current?.click()}>Ouvrir des PDF</button>
               </div>
             </div>
@@ -250,6 +280,33 @@ export default function App() {
           onExport={handleExport}
         />
       </main>
+
+      {showIntro && (
+        <div className="modal-overlay" onClick={dismissIntro}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <img className="modal-logo" src="./logo-simone.png" alt="Simone" />
+            <p className="modal-lead">
+              Visionneuse PDF avec extraction sélective : vous voyez le document, et vous ne faites
+              extraire <strong>que</strong> les passages que vous désignez.
+            </p>
+            <ol className="modal-steps">
+              <li><strong>Ouvrez</strong> un ou plusieurs PDF (onglets en haut).</li>
+              <li>
+                <strong>Marquez</strong> le passage à extraire :
+                <span className="modal-tool">🖍 Surligneur</span> pour une ligne,
+                <span className="modal-tool">⬚ Cadre</span> pour un bloc (touches <kbd>S</kbd> / <kbd>C</kbd>).
+              </li>
+              <li>
+                Le texte est lu directement s’il existe dans le PDF, sinon reconnu par <strong>OCR</strong>.
+                Il s’ajoute au bloc-notes à droite <strong>et est copié automatiquement</strong>.
+              </li>
+              <li><strong>Exportez</strong> le tout en <code>.txt</code> ou <code>.md</code>.</li>
+            </ol>
+            <p className="modal-priv">🔒 Tout se passe sur votre poste — aucun document n’est envoyé sur Internet.</p>
+            <button className="btn-primary modal-btn" onClick={dismissIntro}>Commencer</button>
+          </div>
+        </div>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>

@@ -73,6 +73,12 @@ button { font-family: inherit; cursor: pointer; }
 .btn-ghost:disabled { opacity: 0.45; cursor: default; }
 .btn-danger { color: var(--red); }
 .btn-danger:hover { background: #fef2f2; color: var(--red); }
+.btn-help {
+  width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text-2); font-size: 13px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; transition: color 80ms, background 80ms;
+}
+.btn-help:hover { color: var(--text); background: var(--bg-hover); }
 
 /* ---------- Tabs ---------- */
 .tabs {
@@ -171,6 +177,32 @@ button { font-family: inherit; cursor: pointer; }
 .badge-ocr { background: #dbeafe; color: #1d4ed8; }
 .badge-en-cours { background: #fbf3db; color: #9a6700; }
 .badge-erreur { background: #fef2f2; color: var(--red); }
+
+/* ---------- Modale d'explication ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(26, 26, 24, 0.35);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: modal-fade 150ms ease-out;
+}
+.modal {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  max-width: 460px; width: 100%; padding: 28px 28px 24px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  animation: modal-rise 180ms ease-out;
+}
+.modal-logo { height: 30px; display: block; margin: 0 auto 18px; }
+.modal-lead { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 14px; text-align: center; }
+.modal-steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+.modal-steps li { margin: 7px 0; }
+.modal-steps strong { color: var(--text); }
+.modal-tool { display: inline-block; margin: 0 2px; padding: 1px 6px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; white-space: nowrap; }
+.modal-priv { font-size: 12.5px; color: var(--text-2); background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin: 16px 0 0; text-align: center; }
+.modal code { font-size: 12px; background: var(--bg-subtle); padding: 1px 4px; border-radius: 3px; }
+.modal kbd { font-size: 11px; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; color: var(--text-2); }
+.modal-btn { width: 100%; margin-top: 18px; padding: 9px; }
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ---------- Toast ---------- */
 .toast {
