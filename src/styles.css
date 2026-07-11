@@ -131,7 +131,6 @@ button { font-family: inherit; cursor: pointer; }
   max-width: 420px; text-align: center; background: var(--bg);
   border: 1px solid var(--border); border-radius: 10px; padding: 28px 26px;
 }
-.welcome-logo { height: 40px; width: auto; display: block; margin: 0 auto 18px; }
 .welcome-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
 .welcome-p { font-size: 13px; line-height: 1.5; color: var(--text-2); margin: 0 0 18px; }
 

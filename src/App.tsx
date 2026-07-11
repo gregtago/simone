@@ -265,7 +265,6 @@ export default function App() {
           ) : (
             <div className="welcome">
               <div className="welcome-card">
-                <img className="welcome-logo" src="./logo-simone.png" alt="Simone" />
                 <div className="welcome-title">Ouvrez un ou plusieurs PDF</div>
                 <button className="btn-primary" onClick={() => fileRef.current?.click()}>Ouvrir des PDF</button>
               </div>
