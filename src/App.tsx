@@ -198,8 +198,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <img className="brand-logo" src="./logo-simone.png" alt="Simone" />
-          <span className="brand-sub">Lecteur PDF · OCR sélectif</span>
+          <img className="brand-logo" src="./logo-simone-2.png" alt="Simone — OCR sélectif" />
         </div>
         <div className="topbar-actions">
           {active && (
@@ -299,7 +298,7 @@ export default function App() {
       {showIntro && (
         <div className="modal-overlay" onClick={dismissIntro}>
           <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <img className="modal-logo" src="./logo-simone.png" alt="Simone" />
+            <img className="modal-logo" src="./logo-simone-2.png" alt="Simone" />
             <p className="modal-lead">
               Visionneuse PDF avec extraction sélective : vous voyez le document, et vous ne faites
               extraire <strong>que</strong> les passages que vous désignez.

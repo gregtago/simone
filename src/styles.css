@@ -40,8 +40,7 @@ button { font-family: inherit; cursor: pointer; }
   border-bottom: 1px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand-logo { height: 20px; width: auto; display: block; }
-.brand-sub { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+.brand-logo { height: 30px; width: auto; display: block; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 
 .zoom { display: flex; align-items: center; gap: 2px; }
@@ -198,7 +197,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
   animation: modal-rise 180ms ease-out;
 }
-.modal-logo { height: 30px; display: block; margin: 0 auto 18px; }
+.modal-logo { height: 52px; display: block; margin: 0 auto 18px; }
 .modal-lead { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 14px; text-align: center; }
 .modal-steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
 .modal-steps li { margin: 7px 0; }
