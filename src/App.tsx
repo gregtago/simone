@@ -9,15 +9,19 @@ import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
 
-const ZOOMS = [0.75, 1, 1.25, 1.5, 2, 2.5];
+// Multiplicateurs appliqués par-dessus l'ajustement à la largeur (1 = ajusté).
+const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 
 export default function App() {
   const [docs, setDocs] = useState<PdfDoc[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [scale, setScale] = useState(1.5);
+  const [zoom, setZoom] = useState(1);
   const [tool, setTool] = useState<Tool>('cadre');
   const [showDocs, setShowDocs] = useState(true);
   const [showExtractions, setShowExtractions] = useState(true);
+  const viewerRef = useRef<HTMLElement>(null);
+  const [viewerW, setViewerW] = useState(0);
+  const [pageW, setPageW] = useState<number | null>(null);
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
@@ -32,6 +36,41 @@ export default function App() {
   const toastTimer = useRef<number | undefined>(undefined);
 
   const active = docs.find((d) => d.id === activeId) ?? null;
+
+  // Largeur disponible de la visionneuse : suivie en continu, donc masquer un
+  // panneau la met à jour et le PDF se réajuste tout seul.
+  useEffect(() => {
+    const el = viewerRef.current;
+    if (!el) return;
+    const update = () => setViewerW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Largeur native (en points) de la 1re page du document actif.
+  useEffect(() => {
+    let cancelled = false;
+    if (!active) {
+      setPageW(null);
+      return;
+    }
+    active.pdf
+      .getPage(1)
+      .then((p) => {
+        if (!cancelled) setPageW(p.getViewport({ scale: 1 }).width);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  // Échelle de rendu = ajustement à la largeur × multiplicateur de zoom.
+  const PAGE_PAD = 56; // marges internes + gouttière de scrollbar
+  const fitScale = pageW && viewerW ? Math.max(0.2, (viewerW - PAGE_PAD) / pageW) : 1.2;
+  const scale = Math.min(6, Math.round(fitScale * zoom * 100) / 100);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -189,10 +228,10 @@ export default function App() {
   };
 
   const zoomStep = (dir: 1 | -1) => {
-    setScale((s) => {
-      const i = ZOOMS.findIndex((z) => z >= s);
-      const idx = Math.max(0, Math.min(ZOOMS.length - 1, (i < 0 ? ZOOMS.length - 1 : i) + dir));
-      return ZOOMS[idx];
+    setZoom((z) => {
+      const i = ZOOM_STEPS.findIndex((s) => s >= z - 1e-6);
+      const idx = Math.max(0, Math.min(ZOOM_STEPS.length - 1, (i < 0 ? ZOOM_STEPS.length - 1 : i) + dir));
+      return ZOOM_STEPS[idx];
     });
   };
 
@@ -224,7 +263,7 @@ export default function App() {
           {active && (
             <div className="zoom">
               <button className="btn-ghost" onClick={() => zoomStep(-1)} aria-label="Dézoomer">−</button>
-              <span className="zoom-val">{Math.round(scale * 100)}%</span>
+              <span className="zoom-val" title="100 % = ajusté à la largeur">{Math.round(zoom * 100)}%</span>
               <button className="btn-ghost" onClick={() => zoomStep(1)} aria-label="Zoomer">+</button>
             </div>
           )}
@@ -296,7 +335,7 @@ export default function App() {
             </ul>
           </aside>
         )}
-        <section className="viewer">
+        <section className="viewer" ref={viewerRef}>
           {active ? (
             <PdfDocumentView doc={active} scale={scale} tool={tool} onSelect={handleSelect} />
           ) : (
