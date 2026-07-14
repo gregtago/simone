@@ -16,6 +16,8 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
   const [tool, setTool] = useState<Tool>('cadre');
+  const [showDocs, setShowDocs] = useState(true);
+  const [showExtractions, setShowExtractions] = useState(true);
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
@@ -226,6 +228,26 @@ export default function App() {
               <button className="btn-ghost" onClick={() => zoomStep(1)} aria-label="Zoomer">+</button>
             </div>
           )}
+          <div className="panel-toggles">
+            {docs.length > 0 && (
+              <button
+                className={`btn-toggle${showDocs ? ' toggle-on' : ''}`}
+                onClick={() => setShowDocs((v) => !v)}
+                title="Afficher / masquer les documents"
+                aria-pressed={showDocs}
+              >
+                ◧
+              </button>
+            )}
+            <button
+              className={`btn-toggle${showExtractions ? ' toggle-on' : ''}`}
+              onClick={() => setShowExtractions((v) => !v)}
+              title="Afficher / masquer les extractions"
+              aria-pressed={showExtractions}
+            >
+              ◨
+            </button>
+          </div>
           <button className="btn-help" onClick={() => setShowIntro(true)} title="Aide / à propos" aria-label="Aide">?</button>
           <button className="btn-primary" onClick={() => fileRef.current?.click()} disabled={busy}>
             {busy ? 'Ouverture…' : 'Ouvrir des PDF'}
@@ -245,7 +267,7 @@ export default function App() {
       </header>
 
       <main className="workspace">
-        {docs.length > 0 && (
+        {docs.length > 0 && showDocs && (
           <aside className="doc-sidebar">
             <div className="doc-sidebar-head">
               <span className="section-label">Documents</span>
@@ -286,13 +308,15 @@ export default function App() {
             </div>
           )}
         </section>
-        <CapturesPanel
-          captures={captures}
-          onRemove={removeCapture}
-          onClear={clearCaptures}
-          onToast={showToast}
-          onExport={handleExport}
-        />
+        {showExtractions && (
+          <CapturesPanel
+            captures={captures}
+            onRemove={removeCapture}
+            onClear={clearCaptures}
+            onToast={showToast}
+            onExport={handleExport}
+          />
+        )}
       </main>
 
       {showIntro && (

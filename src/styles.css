@@ -79,6 +79,15 @@ button { font-family: inherit; cursor: pointer; }
 }
 .btn-help:hover { color: var(--text); background: var(--bg-hover); }
 
+.panel-toggles { display: inline-flex; gap: 4px; }
+.btn-toggle {
+  width: 28px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text-3); font-size: 14px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; transition: color 80ms, background 80ms;
+}
+.btn-toggle:hover { color: var(--text-2); background: var(--bg-hover); }
+.btn-toggle.toggle-on { color: var(--text); background: var(--bg-active); border-color: var(--border-strong); }
+
 /* ---------- Colonne des documents (onglets verticaux) ---------- */
 .doc-sidebar {
   width: 214px; min-width: 214px;
