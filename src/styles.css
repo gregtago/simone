@@ -120,7 +120,34 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---------- Workspace ---------- */
 .workspace { flex: 1; display: flex; min-height: 0; }
-.viewer { flex: 1; min-width: 0; overflow: hidden; background: var(--bg-subtle); }
+.viewer { flex: 1; min-width: 0; overflow: hidden; background: var(--bg-subtle); position: relative; }
+
+/* Barre de recherche flottante */
+.findbar {
+  position: absolute; top: 12px; right: 18px; z-index: 20;
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px;
+  padding: 5px 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+}
+.findbar-glyph { color: var(--text-3); font-size: 15px; padding: 0 2px; }
+.findbar-input {
+  border: none; outline: none; background: transparent; font-family: inherit;
+  font-size: 13px; color: var(--text); width: 220px; padding: 2px 2px;
+}
+.findbar-count { font-size: 12px; color: var(--text-3); min-width: 62px; text-align: right; font-variant-numeric: tabular-nums; }
+.findbar-btn {
+  background: none; border: none; color: var(--text-2); font-size: 15px; line-height: 1;
+  padding: 3px 6px; border-radius: 5px;
+}
+.findbar-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); }
+.findbar-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* Surlignages de recherche */
+.hl-layer { position: absolute; inset: 0; pointer-events: none; }
+.hl { position: absolute; background: rgba(250, 204, 21, 0.42); border-radius: 1px; }
+.hl-current { background: rgba(251, 146, 60, 0.6); box-shadow: 0 0 0 1.5px rgba(234, 88, 12, 0.9); }
+
+.btn-search { font-size: 16px; }
 
 .doc-scroll { height: 100%; overflow: auto; }
 .doc-pages { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; }

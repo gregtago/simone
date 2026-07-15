@@ -4,10 +4,12 @@ import { ocr } from './lib/ocr';
 import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
+import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
+import { FindBar } from './components/FindBar';
 
 // Multiplicateurs appliqués par-dessus l'ajustement à la largeur (1 = ajusté).
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -22,6 +24,13 @@ export default function App() {
   const viewerRef = useRef<HTMLElement>(null);
   const [viewerW, setViewerW] = useState(0);
   const [pageW, setPageW] = useState<number | null>(null);
+  const [findOpen, setFindOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [current, setCurrent] = useState(0);
+  const [searching, setSearching] = useState(false);
+  const [noText, setNoText] = useState(false);
+  const indexCache = useRef<Map<string, PageIndex[]>>(new Map());
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
@@ -72,6 +81,53 @@ export default function App() {
   const fitScale = pageW && viewerW ? Math.max(0.2, (viewerW - PAGE_PAD) / pageW) : 1.2;
   const scale = Math.min(6, Math.round(fitScale * zoom * 100) / 100);
 
+  // Recherche dans le document actif (débounce ; index construit à la demande).
+  useEffect(() => {
+    if (!findOpen || !active) return;
+    const q = query;
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      if (!q.trim()) {
+        setMatches([]);
+        setCurrent(0);
+        setNoText(false);
+        return;
+      }
+      let idx = indexCache.current.get(active.id);
+      if (!idx) {
+        setSearching(true);
+        try {
+          idx = await buildDocIndex(active.pdf);
+        } catch {
+          idx = [];
+        }
+        if (cancelled) return;
+        indexCache.current.set(active.id, idx);
+        setSearching(false);
+      }
+      if (cancelled) return;
+      setNoText(idx.every((p) => !p.text.trim()));
+      setMatches(search(idx, q));
+      setCurrent(0);
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [query, findOpen, active]);
+
+  // On repart propre quand on change de document.
+  useEffect(() => {
+    setMatches([]);
+    setCurrent(0);
+    setNoText(false);
+  }, [activeId]);
+
+  const gotoMatch = useCallback(
+    (dir: 1 | -1) => setCurrent((c) => (matches.length ? (c + dir + matches.length) % matches.length : 0)),
+    [matches.length],
+  );
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.clearTimeout(toastTimer.current);
@@ -110,6 +166,20 @@ export default function App() {
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
       if (e.key === 's' || e.key === 'S') setTool('surligneur');
       else if (e.key === 'c' || e.key === 'C') setTool('cadre');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Ctrl/Cmd+F ouvre la recherche ; Échap la ferme.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'f' || e.key === 'F')) {
+        e.preventDefault();
+        setFindOpen(true);
+      } else if (e.key === 'Escape') {
+        setFindOpen(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -267,6 +337,16 @@ export default function App() {
               <button className="btn-ghost" onClick={() => zoomStep(1)} aria-label="Zoomer">+</button>
             </div>
           )}
+          {active && (
+            <button
+              className={`btn-toggle btn-search${findOpen ? ' toggle-on' : ''}`}
+              onClick={() => setFindOpen((v) => !v)}
+              title="Rechercher dans le document (Ctrl/Cmd + F)"
+              aria-label="Rechercher"
+            >
+              ⌕
+            </button>
+          )}
           <div className="panel-toggles">
             {docs.length > 0 && (
               <button
@@ -336,8 +416,21 @@ export default function App() {
           </aside>
         )}
         <section className="viewer" ref={viewerRef}>
+          {active && findOpen && (
+            <FindBar
+              query={query}
+              onQuery={setQuery}
+              total={matches.length}
+              current={current}
+              searching={searching}
+              noText={noText}
+              onPrev={() => gotoMatch(-1)}
+              onNext={() => gotoMatch(1)}
+              onClose={() => setFindOpen(false)}
+            />
+          )}
           {active ? (
-            <PdfDocumentView doc={active} scale={scale} tool={tool} onSelect={handleSelect} />
+            <PdfDocumentView doc={active} scale={scale} tool={tool} matches={matches} current={current} onSelect={handleSelect} />
           ) : (
             <div className="welcome">
               <div className="welcome-card">

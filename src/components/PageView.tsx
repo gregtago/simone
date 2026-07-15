@@ -12,11 +12,18 @@ export interface SelectionPayload {
   textContent: TextContent;
 }
 
+export interface PageHighlight {
+  key: number;
+  rects: { x: number; y: number; w: number; h: number }[];
+  isCurrent: boolean;
+}
+
 interface Props {
   pdf: PDFDocumentProxy;
   pageNumber: number;
   scale: number;
   tool: Tool;
+  highlights: PageHighlight[];
   onSelect: (p: SelectionPayload) => void;
 }
 
@@ -25,9 +32,10 @@ const BRUSH = 22;
 // En dessous de ce déplacement, c'est un simple clic : on n'extrait rien.
 const MIN_DRAG = 5;
 
-export function PageView({ pdf, pageNumber, scale, tool, onSelect }: Props) {
+export function PageView({ pdf, pageNumber, scale, tool, highlights, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef<HTMLCanvasElement>(null);
+  const currentHlRef = useRef<HTMLDivElement>(null);
   const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent; pageProxy: PDFPageProxy } | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const draggingRef = useRef(false);
@@ -200,9 +208,29 @@ export function PageView({ pdf, pageNumber, scale, tool, onSelect }: Props) {
     pointsRef.current = [];
   };
 
+  // Amène l'occurrence courante de la recherche dans la vue.
+  const currentKey = highlights.find((h) => h.isCurrent)?.key ?? null;
+  useEffect(() => {
+    if (currentKey != null) currentHlRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [currentKey]);
+
   return (
     <div className="page-wrap" style={dims ? { width: dims.w, height: dims.h } : undefined}>
       <canvas ref={canvasRef} className="page-canvas" />
+      {highlights.length > 0 && (
+        <div className="hl-layer">
+          {highlights.map((h) =>
+            h.rects.map((r, ri) => (
+              <div
+                key={`${h.key}-${ri}`}
+                ref={h.isCurrent && ri === 0 ? currentHlRef : undefined}
+                className={`hl${h.isCurrent ? ' hl-current' : ''}`}
+                style={{ left: r.x * scale, top: r.y * scale, width: r.w * scale, height: r.h * scale }}
+              />
+            )),
+          )}
+        </div>
+      )}
       <canvas
         ref={paintRef}
         className="paint-layer"
