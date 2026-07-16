@@ -5,7 +5,7 @@ import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
-import { buildPagesPdf, downloadPdf, pagesFileName, formatSize } from './lib/extractPages';
+import { buildExtractPdf, downloadPdf, pagesFileName, formatSize } from './lib/extractPages';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -37,6 +37,7 @@ export default function App() {
   const [extracting, setExtracting] = useState(false);
   const [estSize, setEstSize] = useState<number | null>(null);
   const [sizing, setSizing] = useState(false);
+  const [compress, setCompress] = useState(false);
   const builtRef = useRef<{ sig: string; bytes: Uint8Array } | null>(null);
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
@@ -248,19 +249,19 @@ export default function App() {
   const extractPages = useCallback(async () => {
     if (!active || selectedPages.size === 0) return;
     const pages = [...selectedPages];
-    const sig = `${active.id}:${[...pages].sort((a, b) => a - b).join(',')}`;
+    const sig = `${active.id}:${compress ? 'c' : ''}:${[...pages].sort((a, b) => a - b).join(',')}`;
     setExtracting(true);
     try {
       // Réutilise les octets déjà calculés pour l'estimation de taille.
-      const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildPagesPdf(active, pages);
-      downloadPdf(pagesFileName(active, pages), bytes);
+      const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildExtractPdf(active, pages, compress);
+      downloadPdf(pagesFileName(active, pages, compress), bytes);
       showToast(`PDF de ${pages.length} page(s) généré`);
     } catch {
       showToast('⚠ Échec de l’extraction');
     } finally {
       setExtracting(false);
     }
-  }, [active, selectedPages, showToast]);
+  }, [active, selectedPages, compress, showToast]);
 
   // Poids estimé du PDF à extraire : on construit réellement le fichier (débounce)
   // et on garde ses octets pour le téléchargement.
@@ -271,7 +272,7 @@ export default function App() {
       return;
     }
     const pages = [...selectedPages];
-    const sig = `${active.id}:${[...pages].sort((a, b) => a - b).join(',')}`;
+    const sig = `${active.id}:${compress ? 'c' : ''}:${[...pages].sort((a, b) => a - b).join(',')}`;
     if (builtRef.current?.sig === sig) {
       setEstSize(builtRef.current.bytes.length);
       return;
@@ -280,7 +281,7 @@ export default function App() {
     setSizing(true);
     const t = window.setTimeout(async () => {
       try {
-        const bytes = await buildPagesPdf(active, pages);
+        const bytes = await buildExtractPdf(active, pages, compress);
         if (cancelled) return;
         builtRef.current = { sig, bytes };
         setEstSize(bytes.length);
@@ -294,7 +295,7 @@ export default function App() {
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [pageSelect, active, selectedPages]);
+  }, [pageSelect, active, selectedPages, compress]);
 
   const handleSelect = useCallback(
     async (p: SelectionPayload) => {
@@ -528,6 +529,13 @@ export default function App() {
               </button>
               <button className="btn-ghost" onClick={() => setSelectedPages(new Set())} disabled={selectedPages.size === 0}>
                 Aucune
+              </button>
+              <button
+                className={`btn-ghost${compress ? ' toggle-on' : ''}`}
+                onClick={() => setCompress((v) => !v)}
+                title="Réduit le poids en ré-encodant les pages en images (le texte n'est alors plus sélectionnable)"
+              >
+                {compress ? '☑' : '☐'} Réduire le poids
               </button>
               <button className="btn-primary" onClick={extractPages} disabled={selectedPages.size === 0 || extracting}>
                 {extracting ? 'Extraction…' : 'Extraire en PDF'}
