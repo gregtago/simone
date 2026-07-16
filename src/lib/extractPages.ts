@@ -91,43 +91,5 @@ export function buildExtractPdf(doc: PdfDoc, pages: number[], compress: boolean)
   return compress ? buildCompressedPdf(doc, pages) : buildPagesPdf(doc, pages);
 }
 
-/**
- * Ouvre la boîte « Enregistrer sous… » (Chrome/Edge) pour choisir l'emplacement.
- * Retourne un handle, 'cancelled' si l'utilisateur annule, ou null si l'API
- * n'est pas disponible (→ l'appelant retombe sur le téléchargement classique).
- * DOIT être appelée pendant le geste utilisateur (clic).
- */
-export async function pickSaveLocation(name: string): Promise<FileSystemFileHandle | 'cancelled' | null> {
-  const picker = (window as unknown as { showSaveFilePicker?: (opts: unknown) => Promise<FileSystemFileHandle> })
-    .showSaveFilePicker;
-  if (!picker) return null;
-  try {
-    return await picker({
-      suggestedName: name,
-      types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }],
-    });
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
-    return null; // autre erreur → repli sur le téléchargement classique
-  }
-}
-
-/** Écrit les octets dans l'emplacement choisi. */
-export async function writePdf(handle: FileSystemFileHandle, bytes: Uint8Array) {
-  const writable = await handle.createWritable();
-  await writable.write(bytes as unknown as BufferSource);
-  await writable.close();
-}
-
-/** Déclenche le téléchargement d'octets PDF sous un nom donné. */
-export function downloadPdf(name: string, bytes: Uint8Array) {
-  const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+// L'enregistrement de fichier (« Enregistrer sous… » ou téléchargement) est
+// désormais dans ./save.ts, partagé avec l'export du bloc-notes.

@@ -5,7 +5,8 @@ import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
-import { buildExtractPdf, downloadPdf, pickSaveLocation, writePdf, pagesFileName, formatSize } from './lib/extractPages';
+import { buildExtractPdf, pagesFileName, formatSize } from './lib/extractPages';
+import { pickSaveLocation, writeToHandle, downloadFile } from './lib/save';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -254,15 +255,15 @@ export default function App() {
 
     // Choix de l'emplacement PENDANT le clic (Chrome/Edge). Doit précéder tout
     // await long, sinon l'activation utilisateur expire.
-    const handle = await pickSaveLocation(name);
+    const handle = await pickSaveLocation(name, 'application/pdf', { 'application/pdf': ['.pdf'] });
     if (handle === 'cancelled') return;
 
     setExtracting(true);
     try {
       // Réutilise les octets déjà calculés pour l'estimation de taille.
       const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildExtractPdf(active, pages, compress);
-      if (handle) await writePdf(handle, bytes);
-      else downloadPdf(name, bytes);
+      if (handle) await writeToHandle(handle, bytes);
+      else downloadFile(name, bytes, 'application/pdf');
       showToast(`PDF de ${pages.length} page(s) enregistré`);
     } catch {
       showToast('⚠ Échec de l’extraction');
@@ -368,10 +369,11 @@ export default function App() {
   const removeCapture = (id: string) => setCaptures((c) => c.filter((x) => x.id !== id));
   const clearCaptures = () => setCaptures([]);
 
-  const handleExport = (format: ExportFormat) => {
+  const handleExport = async (format: ExportFormat) => {
     const docRefs = docs.map((d) => ({ id: d.id, name: d.name }));
-    const ok = exportCaptures(format, captures, docRefs);
-    showToast(ok ? `Export ${format === 'md' ? '.md' : '.txt'} généré` : 'Rien à exporter');
+    const res = await exportCaptures(format, captures, docRefs);
+    if (res === 'empty') showToast('Rien à exporter');
+    else if (res !== 'cancelled') showToast(`Export ${format === 'md' ? '.md' : '.txt'} enregistré`);
   };
 
   const zoomStep = (dir: 1 | -1) => {

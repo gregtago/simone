@@ -1,4 +1,5 @@
 import type { Capture } from './types';
+import { saveFile } from './save';
 
 export type ExportFormat = 'txt' | 'md';
 
@@ -93,27 +94,26 @@ function fileStamp(): string {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
 }
 
-function download(filename: string, content: string, mime: string) {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+export type ExportResult = 'saved' | 'downloaded' | 'cancelled' | 'empty';
 
-/** Génère et télécharge le fichier d'export. Retourne false s'il n'y a rien à exporter. */
-export function exportCaptures(format: ExportFormat, captures: Capture[], docs: DocRef[]): boolean {
+/**
+ * Génère le fichier d'export et l'enregistre (boîte « Enregistrer sous… » si
+ * disponible, sinon téléchargement). Retourne 'empty' s'il n'y a rien à exporter.
+ */
+export async function exportCaptures(
+  format: ExportFormat,
+  captures: Capture[],
+  docs: DocRef[],
+): Promise<ExportResult> {
   const hasContent = captures.some((c) => c.text);
-  if (!hasContent) return false;
+  if (!hasContent) return 'empty';
   const base = `simone-extractions-${fileStamp()}`;
   if (format === 'md') {
-    download(`${base}.md`, buildMarkdown(captures, docs), 'text/markdown');
-  } else {
-    download(`${base}.txt`, buildText(captures, docs), 'text/plain');
+    return saveFile(`${base}.md`, buildMarkdown(captures, docs), 'text/markdown;charset=utf-8', {
+      'text/markdown': ['.md'],
+    });
   }
-  return true;
+  return saveFile(`${base}.txt`, buildText(captures, docs), 'text/plain;charset=utf-8', {
+    'text/plain': ['.txt'],
+  });
 }
