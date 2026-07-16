@@ -5,7 +5,7 @@ import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
-import { buildExtractPdf, downloadPdf, pagesFileName, formatSize } from './lib/extractPages';
+import { buildExtractPdf, downloadPdf, pickSaveLocation, writePdf, pagesFileName, formatSize } from './lib/extractPages';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -249,13 +249,21 @@ export default function App() {
   const extractPages = useCallback(async () => {
     if (!active || selectedPages.size === 0) return;
     const pages = [...selectedPages];
+    const name = pagesFileName(active, pages, compress);
     const sig = `${active.id}:${compress ? 'c' : ''}:${[...pages].sort((a, b) => a - b).join(',')}`;
+
+    // Choix de l'emplacement PENDANT le clic (Chrome/Edge). Doit précéder tout
+    // await long, sinon l'activation utilisateur expire.
+    const handle = await pickSaveLocation(name);
+    if (handle === 'cancelled') return;
+
     setExtracting(true);
     try {
       // Réutilise les octets déjà calculés pour l'estimation de taille.
       const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildExtractPdf(active, pages, compress);
-      downloadPdf(pagesFileName(active, pages, compress), bytes);
-      showToast(`PDF de ${pages.length} page(s) généré`);
+      if (handle) await writePdf(handle, bytes);
+      else downloadPdf(name, bytes);
+      showToast(`PDF de ${pages.length} page(s) enregistré`);
     } catch {
       showToast('⚠ Échec de l’extraction');
     } finally {
