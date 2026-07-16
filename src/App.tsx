@@ -5,7 +5,7 @@ import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
-import { extractPagesToPdf } from './lib/extractPages';
+import { buildPagesPdf, downloadPdf, pagesFileName, formatSize } from './lib/extractPages';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -35,6 +35,9 @@ export default function App() {
   const [pageSelect, setPageSelect] = useState(false);
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [extracting, setExtracting] = useState(false);
+  const [estSize, setEstSize] = useState<number | null>(null);
+  const [sizing, setSizing] = useState(false);
+  const builtRef = useRef<{ sig: string; bytes: Uint8Array } | null>(null);
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
@@ -244,16 +247,54 @@ export default function App() {
 
   const extractPages = useCallback(async () => {
     if (!active || selectedPages.size === 0) return;
+    const pages = [...selectedPages];
+    const sig = `${active.id}:${[...pages].sort((a, b) => a - b).join(',')}`;
     setExtracting(true);
     try {
-      await extractPagesToPdf(active, [...selectedPages]);
-      showToast(`PDF de ${selectedPages.size} page(s) généré`);
+      // Réutilise les octets déjà calculés pour l'estimation de taille.
+      const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildPagesPdf(active, pages);
+      downloadPdf(pagesFileName(active, pages), bytes);
+      showToast(`PDF de ${pages.length} page(s) généré`);
     } catch {
       showToast('⚠ Échec de l’extraction');
     } finally {
       setExtracting(false);
     }
   }, [active, selectedPages, showToast]);
+
+  // Poids estimé du PDF à extraire : on construit réellement le fichier (débounce)
+  // et on garde ses octets pour le téléchargement.
+  useEffect(() => {
+    if (!pageSelect || !active || selectedPages.size === 0) {
+      setEstSize(null);
+      setSizing(false);
+      return;
+    }
+    const pages = [...selectedPages];
+    const sig = `${active.id}:${[...pages].sort((a, b) => a - b).join(',')}`;
+    if (builtRef.current?.sig === sig) {
+      setEstSize(builtRef.current.bytes.length);
+      return;
+    }
+    let cancelled = false;
+    setSizing(true);
+    const t = window.setTimeout(async () => {
+      try {
+        const bytes = await buildPagesPdf(active, pages);
+        if (cancelled) return;
+        builtRef.current = { sig, bytes };
+        setEstSize(bytes.length);
+      } catch {
+        if (!cancelled) setEstSize(null);
+      } finally {
+        if (!cancelled) setSizing(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [pageSelect, active, selectedPages]);
 
   const handleSelect = useCallback(
     async (p: SelectionPayload) => {
@@ -468,7 +509,16 @@ export default function App() {
           {active && pageSelect && (
             <div className="pagebar">
               <span className="pagebar-count">
-                {selectedPages.size > 0 ? `${selectedPages.size} page(s) sélectionnée(s)` : 'Cliquez les pages à extraire'}
+                {selectedPages.size > 0 ? (
+                  <>
+                    {selectedPages.size} page(s)
+                    <span className="pagebar-size">
+                      {sizing ? ' · calcul…' : estSize != null ? ` · ~${formatSize(estSize)}` : ''}
+                    </span>
+                  </>
+                ) : (
+                  'Cliquez les pages à extraire'
+                )}
               </span>
               <button
                 className="btn-ghost"
