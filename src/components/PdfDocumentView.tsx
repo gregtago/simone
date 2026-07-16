@@ -8,10 +8,13 @@ interface Props {
   tool: Tool;
   matches: Match[];
   current: number;
+  selectMode: boolean;
+  selectedPages: Set<number>;
+  onTogglePage: (n: number) => void;
   onSelect: (p: SelectionPayload) => void;
 }
 
-export function PdfDocumentView({ doc, scale, tool, matches, current, onSelect }: Props) {
+export function PdfDocumentView({ doc, scale, tool, matches, current, selectMode, selectedPages, onTogglePage, onSelect }: Props) {
   const pages = Array.from({ length: doc.numPages }, (_, i) => i + 1);
   return (
     <div className="doc-scroll">
@@ -30,6 +33,9 @@ export function PdfDocumentView({ doc, scale, tool, matches, current, onSelect }
               scale={scale}
               tool={tool}
               highlights={highlights}
+              selectMode={selectMode}
+              selected={selectedPages.has(n)}
+              onToggleSelect={() => onTogglePage(n)}
               onSelect={onSelect}
             />
           );

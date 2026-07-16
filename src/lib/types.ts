@@ -5,6 +5,8 @@ export interface PdfDoc {
   name: string;
   pdf: PDFDocumentProxy;
   numPages: number;
+  /** Fichier source, conservé pour ré-assembler des pages (extraction PDF). */
+  file: File;
 }
 
 /** Outil de sélection actif. */

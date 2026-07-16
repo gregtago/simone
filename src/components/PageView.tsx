@@ -24,6 +24,9 @@ interface Props {
   scale: number;
   tool: Tool;
   highlights: PageHighlight[];
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onSelect: (p: SelectionPayload) => void;
 }
 
@@ -32,7 +35,7 @@ const BRUSH = 22;
 // En dessous de ce déplacement, c'est un simple clic : on n'extrait rien.
 const MIN_DRAG = 5;
 
-export function PageView({ pdf, pageNumber, scale, tool, highlights, onSelect }: Props) {
+export function PageView({ pdf, pageNumber, scale, tool, highlights, selectMode, selected, onToggleSelect, onSelect }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef<HTMLCanvasElement>(null);
   const currentHlRef = useRef<HTMLDivElement>(null);
@@ -234,10 +237,16 @@ export function PageView({ pdf, pageNumber, scale, tool, highlights, onSelect }:
       <canvas
         ref={paintRef}
         className="paint-layer"
+        style={selectMode ? { pointerEvents: 'none' } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
       />
+      {selectMode && (
+        <div className={`page-select${selected ? ' page-selected' : ''}`} onClick={onToggleSelect}>
+          <span className={`page-check${selected ? ' on' : ''}`}>{selected ? '✓' : ''}</span>
+        </div>
+      )}
       <div className="page-label">Page {pageNumber}</div>
     </div>
   );

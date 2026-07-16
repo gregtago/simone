@@ -5,6 +5,7 @@ import { looksLikeText, textLayerInRect } from './lib/extract';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
+import { extractPagesToPdf } from './lib/extractPages';
 import type { Capture, PdfDoc, Tool } from './lib/types';
 import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
@@ -31,6 +32,9 @@ export default function App() {
   const [searching, setSearching] = useState(false);
   const [noText, setNoText] = useState(false);
   const indexCache = useRef<Map<string, PageIndex[]>>(new Map());
+  const [pageSelect, setPageSelect] = useState(false);
+  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  const [extracting, setExtracting] = useState(false);
   const [showIntro, setShowIntro] = useState<boolean>(() => {
     try {
       return localStorage.getItem('simone-intro-vue') !== '1';
@@ -121,6 +125,7 @@ export default function App() {
     setMatches([]);
     setCurrent(0);
     setNoText(false);
+    setSelectedPages(new Set());
   }, [activeId]);
 
   const gotoMatch = useCallback(
@@ -195,7 +200,7 @@ export default function App() {
         try {
           const buf = await file.arrayBuffer();
           const pdf = await loadPdf(buf);
-          added.push({ id: crypto.randomUUID(), name: file.name, pdf, numPages: pdf.numPages });
+          added.push({ id: crypto.randomUUID(), name: file.name, pdf, numPages: pdf.numPages, file });
         } catch {
           showToast(`⚠ Échec d'ouverture : ${file.name}`);
         }
@@ -227,6 +232,28 @@ export default function App() {
     setDocs([]);
     setActiveId(null);
   }, []);
+
+  const togglePage = useCallback((n: number) => {
+    setSelectedPages((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
+  }, []);
+
+  const extractPages = useCallback(async () => {
+    if (!active || selectedPages.size === 0) return;
+    setExtracting(true);
+    try {
+      await extractPagesToPdf(active, [...selectedPages]);
+      showToast(`PDF de ${selectedPages.size} page(s) généré`);
+    } catch {
+      showToast('⚠ Échec de l’extraction');
+    } finally {
+      setExtracting(false);
+    }
+  }, [active, selectedPages, showToast]);
 
   const handleSelect = useCallback(
     async (p: SelectionPayload) => {
@@ -339,6 +366,15 @@ export default function App() {
           )}
           {active && (
             <button
+              className={`btn-ghost btn-mode${pageSelect ? ' mode-on' : ''}`}
+              onClick={() => setPageSelect((v) => !v)}
+              title="Sélectionner des pages et les extraire en PDF"
+            >
+              ⧉ Pages
+            </button>
+          )}
+          {active && (
+            <button
               className={`btn-toggle btn-search${findOpen ? ' toggle-on' : ''}`}
               onClick={() => setFindOpen((v) => !v)}
               title="Rechercher dans le document (Ctrl/Cmd + F)"
@@ -429,8 +465,38 @@ export default function App() {
               onClose={() => setFindOpen(false)}
             />
           )}
+          {active && pageSelect && (
+            <div className="pagebar">
+              <span className="pagebar-count">
+                {selectedPages.size > 0 ? `${selectedPages.size} page(s) sélectionnée(s)` : 'Cliquez les pages à extraire'}
+              </span>
+              <button
+                className="btn-ghost"
+                onClick={() => setSelectedPages(new Set(Array.from({ length: active.numPages }, (_, i) => i + 1)))}
+              >
+                Tout
+              </button>
+              <button className="btn-ghost" onClick={() => setSelectedPages(new Set())} disabled={selectedPages.size === 0}>
+                Aucune
+              </button>
+              <button className="btn-primary" onClick={extractPages} disabled={selectedPages.size === 0 || extracting}>
+                {extracting ? 'Extraction…' : 'Extraire en PDF'}
+              </button>
+              <button className="btn-ghost" onClick={() => setPageSelect(false)} aria-label="Fermer">✕</button>
+            </div>
+          )}
           {active ? (
-            <PdfDocumentView doc={active} scale={scale} tool={tool} matches={matches} current={current} onSelect={handleSelect} />
+            <PdfDocumentView
+              doc={active}
+              scale={scale}
+              tool={tool}
+              matches={matches}
+              current={current}
+              selectMode={pageSelect}
+              selectedPages={selectedPages}
+              onTogglePage={togglePage}
+              onSelect={handleSelect}
+            />
           ) : (
             <div className="welcome">
               <div className="welcome-card">
