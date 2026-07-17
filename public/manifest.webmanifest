@@ -1,0 +1,17 @@
+{
+  "name": "Simone — Lecteur PDF · OCR sélectif",
+  "short_name": "Simone",
+  "description": "Visionneuse PDF avec extraction sélective (texte natif ou OCR). Tout se passe sur votre poste.",
+  "lang": "fr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f7f5",
+  "theme_color": "#1c2127",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -8,3 +8,12 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Service worker : installation (PWA) + fonctionnement hors-ligne.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+      /* pas de PWA si l'enregistrement échoue — l'app fonctionne quand même */
+    });
+  });
+}
