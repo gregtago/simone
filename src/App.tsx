@@ -12,6 +12,7 @@ import { PdfDocumentView } from './components/PdfDocumentView';
 import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
 import { FindBar } from './components/FindBar';
+import { Tutorial } from './components/Tutorial';
 
 // Multiplicateurs appliqués par-dessus l'ajustement à la largeur (1 = ajusté).
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -585,32 +586,7 @@ export default function App() {
         )}
       </main>
 
-      {showIntro && (
-        <div className="modal-overlay" onClick={dismissIntro}>
-          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <img className="modal-logo" src="./logo-simone-3.png" alt="Simone" />
-            <p className="modal-lead">
-              Visionneuse PDF avec extraction sélective : vous voyez le document, et vous ne faites
-              extraire <strong>que</strong> les passages que vous désignez.
-            </p>
-            <ol className="modal-steps">
-              <li><strong>Ouvrez</strong> un ou plusieurs PDF (onglets en haut).</li>
-              <li>
-                <strong>Marquez</strong> le passage à extraire :
-                <span className="modal-tool">🖍 Surligneur</span> pour une ligne,
-                <span className="modal-tool">⬚ Cadre</span> pour un bloc (touches <kbd>S</kbd> / <kbd>C</kbd>).
-              </li>
-              <li>
-                Le texte est lu directement s’il existe dans le PDF, sinon reconnu par <strong>OCR</strong>.
-                Il s’ajoute au bloc-notes à droite <strong>et est copié automatiquement</strong>.
-              </li>
-              <li><strong>Exportez</strong> le tout en <code>.txt</code> ou <code>.md</code>.</li>
-            </ol>
-            <p className="modal-priv">🔒 Tout se passe sur votre poste — aucun document n’est envoyé sur Internet.</p>
-            <button className="btn-primary modal-btn" onClick={dismissIntro}>Commencer</button>
-          </div>
-        </div>
-      )}
+      {showIntro && <Tutorial onClose={dismissIntro} />}
 
       {toast && <div className="toast">{toast}</div>}
     </div>
