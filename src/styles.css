@@ -277,8 +277,9 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
   animation: modal-rise 180ms ease-out; text-align: center;
 }
-.tuto-visual { height: 88px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.tuto-visual { height: 108px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
 .tuto-logo { height: 40px; width: auto; }
+.tuto-illus { height: 104px; width: auto; display: block; }
 .tuto-badge {
   width: 76px; height: 76px; border-radius: 50%;
   background: var(--bg-subtle); border: 1px solid var(--border);

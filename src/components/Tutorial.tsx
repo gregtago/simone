@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { MarkArt, ExtractArt, SearchArt, PagesArt, PrivacyArt } from './TutoArt';
 
 interface Step {
   visual: ReactNode;
@@ -18,7 +19,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    visual: <div className="tuto-badge">🖍 ⬚</div>,
+    visual: <MarkArt />,
     title: 'Marquez ce qui vous intéresse',
     body: (
       <>
@@ -29,7 +30,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    visual: <div className="tuto-badge">📋</div>,
+    visual: <ExtractArt />,
     title: 'Le texte arrive tout seul',
     body: (
       <>
@@ -40,7 +41,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    visual: <div className="tuto-badge">⌕</div>,
+    visual: <SearchArt />,
     title: 'Cherchez dans le document',
     body: (
       <>
@@ -50,7 +51,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    visual: <div className="tuto-badge">⧉</div>,
+    visual: <PagesArt />,
     title: 'Extrayez des pages',
     body: (
       <>
@@ -60,7 +61,7 @@ const STEPS: Step[] = [
     ),
   },
   {
-    visual: <div className="tuto-badge">🔒</div>,
+    visual: <PrivacyArt />,
     title: 'Tout reste sur votre poste',
     body: (
       <>
