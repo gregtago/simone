@@ -1,5 +1,6 @@
 import type { Capture } from '../lib/types';
 import type { ExportFormat } from '../lib/exporter';
+import { reflowFlat } from '../lib/reflow';
 
 interface Props {
   captures: Capture[];
@@ -70,6 +71,17 @@ export function CapturesPanel({ captures, onRemove, onClear, onToast, onExport }
               </div>
               <div className="capture-actions">
                 <button className="btn-ghost" disabled={!c.text} onClick={() => copy(c.text)}>Copier</button>
+                {/* Pour un champ qui n'accepte pas de retour à la ligne (fiche
+                    répertoire, clause d'acte) : tout le passage sur une ligne. */}
+                {c.text.includes('\n') && (
+                  <button
+                    className="btn-ghost"
+                    title="Copier tout le passage sur une seule ligne"
+                    onClick={() => copy(reflowFlat(c.text))}
+                  >
+                    Copier au fil
+                  </button>
+                )}
                 <button className="btn-ghost btn-danger" onClick={() => onRemove(c.id)}>Supprimer</button>
               </div>
             </li>

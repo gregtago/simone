@@ -232,7 +232,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 13px; line-height: 1.45; color: var(--text);
   white-space: pre-wrap; word-break: break-word; max-height: 180px; overflow: auto;
 }
-.capture-actions { display: flex; gap: 6px; margin-top: 8px; }
+.capture-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .muted { color: var(--text-3); font-style: normal; }
 
 .badge {

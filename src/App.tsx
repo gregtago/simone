@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPdf } from './lib/pdf';
 import { ocr } from './lib/ocr';
 import { looksLikeText, textLayerInRect } from './lib/extract';
+import { reflow } from './lib/reflow';
 import { preprocessForOcr, renderRegionForOcr, thumbnail } from './lib/ocr-image';
 import { exportCaptures, type ExportFormat } from './lib/exporter';
 import { buildDocIndex, search, type Match, type PageIndex } from './lib/search';
@@ -310,7 +311,9 @@ export default function App() {
   const handleSelect = useCallback(
     async (p: SelectionPayload) => {
       if (!active) return;
-      const native = textLayerInRect(p.textContent, p.viewport, p.rect);
+      // La mise en page ne nous intéresse pas : on remet le passage au fil du
+      // texte (mots coupés recollés, lignes fondues) avant de le retenir.
+      const native = reflow(textLayerInRect(p.textContent, p.viewport, p.rect));
 
       if (looksLikeText(native)) {
         setCaptures((c) => [
@@ -351,14 +354,15 @@ export default function App() {
         // Une zone nettement plus large que haute est probablement une ligne unique.
         const mode = p.rect.w / p.rect.h > 8 ? 'ligne' : 'bloc';
         const res = await ocr(hi, mode);
+        const text = reflow(res.text);
         setCaptures((c) =>
           c.map((x) =>
             x.id === id
-              ? { ...x, status: res.text ? 'ocr' : 'erreur', text: res.text, confidence: res.confidence, thumb }
+              ? { ...x, status: text ? 'ocr' : 'erreur', text, confidence: res.confidence, thumb }
               : x,
           ),
         );
-        if (res.text) copyToClipboard(res.text);
+        if (text) copyToClipboard(text);
       } catch {
         setCaptures((c) => c.map((x) => (x.id === id ? { ...x, status: 'erreur' } : x)));
         showToast('⚠ Échec de l’OCR');

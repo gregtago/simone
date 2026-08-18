@@ -19,6 +19,14 @@ IA ne parcourt seule des centaines de pages.
   + étirement de contraste), et Tesseract est réglé selon la forme de la zone
   (ligne unique ou bloc). Une **vignette** de la zone accompagne chaque
   extraction pour vérification d'un coup d'œil.
+- **Texte au fil, sans la mise en page.** Un mot coupé en fin de ligne est
+  recollé (« esca- » + « lier » → « escalier », et non « esca lier »), les
+  retours à la ligne de justification redeviennent des espaces, les élisions
+  coupées (« l' » + « appartement ») sont réunies. Les traits d'union légitimes
+  sont préservés (« sous-sol », « rez-de-chaussée », « celui-ci »,
+  « Saint-Denis », « article L. 121-1 »). Seuls les alinéas et les énumérations
+  survivent ; un bouton **Copier au fil** met le passage sur une seule ligne
+  pour les champs qui n'acceptent pas de retour à la ligne.
 - **100 % sur le poste.** Le rendu (pdf.js) comme la reconnaissance de texte
   (tesseract.js en WebAssembly, modèles français + anglais) tournent
   entièrement dans le navigateur. **Aucun document n'est envoyé sur Internet** —
@@ -44,6 +52,7 @@ npm install        # installe + vendorise les assets OCR (mode hors-ligne)
 npm run dev        # serveur de dev
 npm run build      # build de production (typecheck + bundle)
 npm run preview    # sert le build
+npm run check:reflow  # contrôle les règles de recollage des mots coupés
 ```
 
 ### Données OCR hors-ligne
