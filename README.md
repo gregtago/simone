@@ -13,7 +13,17 @@ IA ne parcourt seule des centaines de pages.
 - **Extraction intelligente selon le document.** Si la zone surlignée contient
   une couche texte (acte natif, PDF généré), le texte est lu directement —
   instantané et parfait, sans OCR. Ce n'est que sur une image scannée (pas de
-  texte sélectionnable) que l'OCR **Tesseract** prend le relais.
+  texte sélectionnable) que l'OCR **Tesseract** prend le relais — ou lorsque la
+  couche texte est inexploitable, ce que Simone détecte au lieu de restituer
+  une bouillie de lettres.
+- **Juste les mots surlignés, même en texte justifié.** Un acte justifié est le
+  cas difficile : la couche texte y rend souvent la ligne imprimée entière en
+  un seul bloc, et la coupe à chaque exposant ou passage en gras sans dire s'il
+  y avait une espace. Simone replace chaque lettre d'après sa chasse pour ne
+  garder que les mots réellement sous le trait, et déduit les espaces de
+  l'écart mesuré entre les fragments — « Me DUPONT le 1er mars » et non
+  « M e DUPONT le 1 er mars ». Les documents justifiés en
+  écartant les lettres (« L e p r i x ») sont resserrés.
 - **OCR soigné.** La zone n'est pas recadrée depuis l'affichage : elle est
   **re-rendue à ~300 DPI directement depuis le PDF**, prétraitée (niveaux de gris
   + étirement de contraste), et Tesseract est réglé selon la forme de la zone
@@ -53,6 +63,7 @@ npm run dev        # serveur de dev
 npm run build      # build de production (typecheck + bundle)
 npm run preview    # sert le build
 npm run check:reflow  # contrôle les règles de recollage des mots coupés
+npm run check:extract # contrôle l'assemblage du texte natif (couches réelles)
 ```
 
 ### Données OCR hors-ligne
