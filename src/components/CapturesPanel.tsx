@@ -1,7 +1,8 @@
 import type { Capture } from '../lib/types';
 import type { ExportFormat } from '../lib/exporter';
 import { reflowFlat } from '../lib/reflow';
-import { LabelInput, LabelOptions } from './LabelInput';
+import { LabelInput } from './LabelInput';
+import { CAPTURE_LABELS, FREQUENT_CAPTURE_LABELS } from '../lib/labels';
 
 interface Props {
   captures: Capture[];
@@ -11,8 +12,8 @@ interface Props {
   onExport: (format: ExportFormat) => void;
   onLabel: (id: string, label: string) => void;
   onCommitLabel: (label: string) => void;
-  /** Suggestions d'étiquettes (mémorisées + prédéfinies). */
-  labelSuggestions: string[];
+  /** Étiquettes employées récemment sur ce poste. */
+  recentLabels: string[];
   /** Extraction dont le champ d'étiquette prend le focus (la dernière faite). */
   focusId: string | null;
 }
@@ -32,7 +33,7 @@ export function CapturesPanel({
   onExport,
   onLabel,
   onCommitLabel,
-  labelSuggestions,
+  recentLabels,
   focusId,
 }: Props) {
   const hasContent = captures.some((c) => c.text);
@@ -55,7 +56,6 @@ export function CapturesPanel({
 
   return (
     <aside className="panel">
-      <LabelOptions id="simone-capture-labels" labels={labelSuggestions} />
       <div className="panel-head">
         <span className="section-label">Extractions</span>
         {captures.length > 0 && (
@@ -85,7 +85,9 @@ export function CapturesPanel({
                 value={c.label ?? ''}
                 onChange={(v) => onLabel(c.id, v)}
                 onCommit={onCommitLabel}
-                listId="simone-capture-labels"
+                labels={CAPTURE_LABELS}
+                frequent={FREQUENT_CAPTURE_LABELS}
+                recent={recentLabels}
                 placeholder="Étiquette : ex. état civil — vendeur"
                 autoFocus={c.id === focusId}
               />

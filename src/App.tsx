@@ -14,8 +14,8 @@ import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
 import { FindBar } from './components/FindBar';
 import { Tutorial } from './components/Tutorial';
-import { LabelInput, LabelOptions } from './components/LabelInput';
-import { CAPTURE_LABELS, DOC_LABELS, loadCustomLabels, rememberLabel } from './lib/labels';
+import { LabelInput } from './components/LabelInput';
+import { DOC_LABELS, FREQUENT_DOC_LABELS, loadCustomLabels, rememberLabel } from './lib/labels';
 
 // Multiplicateurs appliqués par-dessus l'ajustement à la largeur (1 = ajusté).
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -56,8 +56,10 @@ export default function App() {
   // l'export) et dernière extraction, dont le champ d'étiquette prend le focus.
   const [docLabels, setDocLabels] = useState<Record<string, string>>({});
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [customLabels, setCustomLabels] = useState<string[]>(loadCustomLabels);
-  const commitLabel = useCallback((v: string) => setCustomLabels(rememberLabel(v)), []);
+  const [recentLabels, setRecentLabels] = useState<string[]>(() => loadCustomLabels('extraction'));
+  const [recentDocLabels, setRecentDocLabels] = useState<string[]>(() => loadCustomLabels('document'));
+  const commitLabel = useCallback((v: string) => setRecentLabels(rememberLabel('extraction', v)), []);
+  const commitDocLabel = useCallback((v: string) => setRecentDocLabels(rememberLabel('document', v)), []);
   const setCaptureLabel = useCallback(
     (id: string, label: string) => setCaptures((c) => c.map((x) => (x.id === id ? { ...x, label } : x))),
     [],
@@ -500,7 +502,6 @@ export default function App() {
               <span className="section-label">Documents</span>
               <button className="btn-ghost" onClick={closeAll} title="Fermer tous les PDF">Fermer tous</button>
             </div>
-            <LabelOptions id="simone-doc-labels" labels={[...customLabels, ...DOC_LABELS]} />
             <ul className="doc-list">
               {docs.map((d) => (
                 <li
@@ -514,8 +515,10 @@ export default function App() {
                       className="label-input label-input-doc"
                       value={docLabels[d.id] ?? ''}
                       onChange={(v) => setDocLabels((m) => ({ ...m, [d.id]: v }))}
-                      onCommit={commitLabel}
-                      listId="simone-doc-labels"
+                      onCommit={commitDocLabel}
+                      labels={DOC_LABELS}
+                      frequent={FREQUENT_DOC_LABELS}
+                      recent={recentDocLabels}
                       placeholder="Nature : ex. titre de propriété"
                     />
                   </div>
@@ -614,7 +617,7 @@ export default function App() {
             onExport={handleExport}
             onLabel={setCaptureLabel}
             onCommitLabel={commitLabel}
-            labelSuggestions={[...customLabels, ...CAPTURE_LABELS]}
+            recentLabels={recentLabels}
             focusId={focusId}
           />
         )}

@@ -49,11 +49,14 @@ IA ne parcourt seule des centaines de pages.
 
 - **Étiquettes.** Chaque extraction reçoit une étiquette qui qualifie
   l'information (« Immatriculation de la copropriété », « État civil —
-  vendeur ») : le champ prend la main dès la capture, on tape quelques lettres
-  et l'on choisit dans les suggestions, Entrée rend la main au document. Chaque
-  document peut aussi recevoir sa nature (« Titre de propriété », « État
-  daté »). Les étiquettes saisies librement sont mémorisées sur le poste et
-  reproposées. À l'export, elles figurent sous la forme `Nature du document : …`
+  vendeur ») : le champ prend la main dès la capture et propose d'emblée les
+  étiquettes courantes ; la frappe filtre près de deux cents étiquettes toutes
+  faites, sans tenir compte des accents (« etat acq » → « État civil —
+  acquéreur »). ↑ ↓ pour choisir, Entrée ou Tab pour valider : la main revient
+  au document. Chaque document peut aussi recevoir sa nature (« Titre de
+  propriété », « État daté »). Les étiquettes employées sont mémorisées sur le
+  poste et reproposées en tête. Le paragraphe à ajouter au skill de lecture
+  des exports est dans `docs/skill-lecture-extractions-etiquettes.md`. À l'export, elles figurent sous la forme `Nature du document : …`
   et `Étiquette : …`, pour que l'IA qui lira le fichier sache ce qu'elle reçoit.
 
 Inspiration : [NormCap](https://github.com/dynobo/normcap), transposé du geste
