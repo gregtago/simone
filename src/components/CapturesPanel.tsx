@@ -1,6 +1,8 @@
 import type { Capture } from '../lib/types';
 import type { ExportFormat } from '../lib/exporter';
 import { reflowFlat } from '../lib/reflow';
+import { LabelInput } from './LabelInput';
+import { CAPTURE_LABELS, FREQUENT_CAPTURE_LABELS } from '../lib/labels';
 
 interface Props {
   captures: Capture[];
@@ -8,6 +10,12 @@ interface Props {
   onClear: () => void;
   onToast: (msg: string) => void;
   onExport: (format: ExportFormat) => void;
+  onLabel: (id: string, label: string) => void;
+  onCommitLabel: (label: string) => void;
+  /** Étiquettes employées récemment sur ce poste. */
+  recentLabels: string[];
+  /** Extraction dont le champ d'étiquette prend le focus (la dernière faite). */
+  focusId: string | null;
 }
 
 const STATUS_LABEL: Record<Capture['status'], string> = {
@@ -17,7 +25,17 @@ const STATUS_LABEL: Record<Capture['status'], string> = {
   erreur: 'erreur',
 };
 
-export function CapturesPanel({ captures, onRemove, onClear, onToast, onExport }: Props) {
+export function CapturesPanel({
+  captures,
+  onRemove,
+  onClear,
+  onToast,
+  onExport,
+  onLabel,
+  onCommitLabel,
+  recentLabels,
+  focusId,
+}: Props) {
   const hasContent = captures.some((c) => c.text);
   const copy = async (text: string) => {
     try {
@@ -31,7 +49,7 @@ export function CapturesPanel({ captures, onRemove, onClear, onToast, onExport }
   const copyAll = () => {
     const all = captures
       .filter((c) => c.text)
-      .map((c) => c.text)
+      .map((c) => (c.label?.trim() ? `${c.label.trim()} :\n${c.text}` : c.text))
       .join('\n\n');
     if (all) copy(all);
   };
@@ -63,6 +81,16 @@ export function CapturesPanel({ captures, onRemove, onClear, onToast, onExport }
                   {c.confidence != null && c.status === 'ocr' ? ` · ${c.confidence}%` : ''}
                 </span>
               </div>
+              <LabelInput
+                value={c.label ?? ''}
+                onChange={(v) => onLabel(c.id, v)}
+                onCommit={onCommitLabel}
+                labels={CAPTURE_LABELS}
+                frequent={FREQUENT_CAPTURE_LABELS}
+                recent={recentLabels}
+                placeholder="Étiquette : ex. état civil — vendeur"
+                autoFocus={c.id === focusId}
+              />
               {c.thumb && (
                 <img className="capture-thumb" src={c.thumb} alt="Zone capturée" />
               )}

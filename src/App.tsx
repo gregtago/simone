@@ -14,6 +14,8 @@ import type { SelectionPayload } from './components/PageView';
 import { CapturesPanel } from './components/CapturesPanel';
 import { FindBar } from './components/FindBar';
 import { Tutorial } from './components/Tutorial';
+import { LabelInput } from './components/LabelInput';
+import { DOC_LABELS, FREQUENT_DOC_LABELS, loadCustomLabels, rememberLabel } from './lib/labels';
 
 // Multiplicateurs appliqués par-dessus l'ajustement à la largeur (1 = ajusté).
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
@@ -50,6 +52,18 @@ export default function App() {
     }
   });
   const [captures, setCaptures] = useState<Capture[]>([]);
+  // Étiquettes : nature de chaque document (conservée après fermeture, pour
+  // l'export) et dernière extraction, dont le champ d'étiquette prend le focus.
+  const [docLabels, setDocLabels] = useState<Record<string, string>>({});
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [recentLabels, setRecentLabels] = useState<string[]>(() => loadCustomLabels('extraction'));
+  const [recentDocLabels, setRecentDocLabels] = useState<string[]>(() => loadCustomLabels('document'));
+  const commitLabel = useCallback((v: string) => setRecentLabels(rememberLabel('extraction', v)), []);
+  const commitDocLabel = useCallback((v: string) => setRecentDocLabels(rememberLabel('document', v)), []);
+  const setCaptureLabel = useCallback(
+    (id: string, label: string) => setCaptures((c) => c.map((x) => (x.id === id ? { ...x, label } : x))),
+    [],
+  );
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -316,9 +330,11 @@ export default function App() {
       const native = reflow(textLayerInRect(p.textContent, p.viewport, p.rect));
 
       if (looksLikeText(native)) {
+        const nid = crypto.randomUUID();
+        setFocusId(nid);
         setCaptures((c) => [
           {
-            id: crypto.randomUUID(),
+            id: nid,
             docId: active.id,
             docName: active.name,
             page: p.page,
@@ -334,6 +350,7 @@ export default function App() {
 
       // Pas de texte natif → OCR sur l'image de la zone.
       const id = crypto.randomUUID();
+      setFocusId(id);
       setCaptures((c) => [
         {
           id,
@@ -376,7 +393,7 @@ export default function App() {
 
   const handleExport = async (format: ExportFormat) => {
     const docRefs = docs.map((d) => ({ id: d.id, name: d.name }));
-    const res = await exportCaptures(format, captures, docRefs);
+    const res = await exportCaptures(format, captures, docRefs, docLabels);
     if (res === 'empty') showToast('Rien à exporter');
     else if (res !== 'cancelled') showToast(`Export ${format === 'md' ? '.md' : '.txt'} enregistré`);
   };
@@ -492,7 +509,19 @@ export default function App() {
                   className={`doc-item${d.id === activeId ? ' doc-item-active' : ''}`}
                   onClick={() => setActiveId(d.id)}
                 >
-                  <span className="doc-item-name" title={d.name}>{d.name}</span>
+                  <div className="doc-item-body">
+                    <span className="doc-item-name" title={d.name}>{d.name}</span>
+                    <LabelInput
+                      className="label-input label-input-doc"
+                      value={docLabels[d.id] ?? ''}
+                      onChange={(v) => setDocLabels((m) => ({ ...m, [d.id]: v }))}
+                      onCommit={commitDocLabel}
+                      labels={DOC_LABELS}
+                      frequent={FREQUENT_DOC_LABELS}
+                      recent={recentDocLabels}
+                      placeholder="Nature : ex. titre de propriété"
+                    />
+                  </div>
                   <button
                     className="doc-item-close"
                     aria-label="Fermer"
@@ -586,6 +615,10 @@ export default function App() {
             onClear={clearCaptures}
             onToast={showToast}
             onExport={handleExport}
+            onLabel={setCaptureLabel}
+            onCommitLabel={commitLabel}
+            recentLabels={recentLabels}
+            focusId={focusId}
           />
         )}
       </main>
