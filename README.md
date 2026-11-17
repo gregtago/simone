@@ -50,7 +50,7 @@ IA ne parcourt seule des centaines de pages.
 - **Étiquettes.** Chaque extraction reçoit une étiquette qui qualifie
   l'information (« Immatriculation de la copropriété », « État civil —
   vendeur ») : le champ prend la main dès la capture et propose d'emblée les
-  étiquettes courantes ; la frappe filtre près de deux cents étiquettes toutes
+  étiquettes courantes ; la frappe filtre quelque 170 étiquettes toutes
   faites, sans tenir compte des accents (« etat acq » → « État civil —
   acquéreur »). ↑ ↓ pour choisir, Entrée ou Tab pour valider : la main revient
   au document. Chaque document peut aussi recevoir sa nature (« Titre de
