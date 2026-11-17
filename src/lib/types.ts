@@ -33,5 +33,10 @@ export interface Capture {
   confidence?: number;
   /** Vignette (data URL) de la zone capturée, pour vérification (OCR uniquement). */
   thumb?: string;
+  /**
+   * Étiquette posée par le notaire pour qualifier l'information
+   * (« Immatriculation de la copropriété », « État civil — vendeur »).
+   */
+  label?: string;
   createdAt: number;
 }

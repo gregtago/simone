@@ -47,6 +47,15 @@ IA ne parcourt seule des centaines de pages.
   Un export en bas génère un fichier **`.txt` ou `.md`**, regroupé par document
   puis par page, avec la méthode et le taux de confiance.
 
+- **Étiquettes.** Chaque extraction reçoit une étiquette qui qualifie
+  l'information (« Immatriculation de la copropriété », « État civil —
+  vendeur ») : le champ prend la main dès la capture, on tape quelques lettres
+  et l'on choisit dans les suggestions, Entrée rend la main au document. Chaque
+  document peut aussi recevoir sa nature (« Titre de propriété », « État
+  daté »). Les étiquettes saisies librement sont mémorisées sur le poste et
+  reproposées. À l'export, elles figurent sous la forme `Nature du document : …`
+  et `Étiquette : …`, pour que l'IA qui lira le fichier sache ce qu'elle reçoit.
+
 Inspiration : [NormCap](https://github.com/dynobo/normcap), transposé du geste
 « capture d'écran » vers « zone d'un PDF ».
 
