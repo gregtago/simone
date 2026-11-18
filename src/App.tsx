@@ -278,7 +278,7 @@ export default function App() {
     try {
       // Réutilise les octets déjà calculés pour l'estimation de taille.
       const bytes = builtRef.current?.sig === sig ? builtRef.current.bytes : await buildExtractPdf(active, pages, compress);
-      if (handle) await writeToHandle(handle, bytes);
+      if (handle) await writeToHandle(handle, bytes, 'application/pdf');
       else downloadFile(name, bytes, 'application/pdf');
       showToast(`PDF de ${pages.length} page(s) enregistré`);
     } catch {
@@ -393,9 +393,14 @@ export default function App() {
 
   const handleExport = async (format: ExportFormat) => {
     const docRefs = docs.map((d) => ({ id: d.id, name: d.name }));
-    const res = await exportCaptures(format, captures, docRefs, docLabels);
-    if (res === 'empty') showToast('Rien à exporter');
-    else if (res !== 'cancelled') showToast(`Export ${format === 'md' ? '.md' : '.txt'} enregistré`);
+    try {
+      const res = await exportCaptures(format, captures, docRefs, docLabels);
+      if (res === 'empty') showToast('Rien à exporter');
+      else if (res === 'downloaded') showToast(`Export ${format === 'md' ? '.md' : '.txt'} téléchargé`);
+      else if (res !== 'cancelled') showToast(`Export ${format === 'md' ? '.md' : '.txt'} enregistré`);
+    } catch {
+      showToast('⚠ Échec de l’export');
+    }
   };
 
   const zoomStep = (dir: 1 | -1) => {
