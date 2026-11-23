@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
+import { annoncerPierre } from './lib/annoncePierre';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,3 +18,6 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+// Annonce de l'arrivée de Pierre (une fois par navigateur).
+annoncerPierre();
