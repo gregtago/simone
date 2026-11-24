@@ -179,6 +179,21 @@ button { font-family: inherit; cursor: pointer; }
 
 .page-wrap { position: relative; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
 .page-canvas { display: block; }
+/* Page en cours de rendu, et ouverture d'un fichier lourd. */
+.page-loading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; color: #8a8a8a; pointer-events: none;
+}
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.15); border-top-color: rgba(0, 0, 0, 0.55);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.viewer-loading {
+  position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: color-mix(in srgb, var(--bg-subtle) 80%, transparent); font-size: 13px; color: var(--text);
+}
 /* Calque de surlignage : le jaune se comporte comme de l'encre de marqueur
    (mix-blend-mode: multiply) — il jaunit le fond blanc mais laisse le texte
    noir lisible. S'estompe après la capture via la transition d'opacité. */
@@ -245,8 +260,12 @@ button { font-family: inherit; cursor: pointer; }
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 5px 8px; border-radius: 4px; font-size: 12px; color: var(--text); cursor: pointer;
 }
-.label-suggest-hi { background: var(--bg-active); }
-.label-suggest-recent { font-size: 10px; color: var(--text-3); }
+.label-suggest-hi, .label-suggest li:hover { background: var(--bg-active); }
+.label-suggest-recent { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.label-suggest-tab {
+  font-family: inherit; font-size: 10px; color: var(--text-2, var(--text-3));
+  border: 1px solid var(--border-strong); border-radius: 3px; padding: 0 4px; background: var(--bg);
+}
 .label-input-doc { margin: 0; font-size: 11px; padding: 2px 6px; font-weight: 400; }
 .capture-thumb {
   display: block; max-width: 100%; margin: 0 0 7px;

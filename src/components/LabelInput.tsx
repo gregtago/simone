@@ -20,9 +20,10 @@ interface Props {
 /**
  * Champ d'étiquette à suggestions. Les étiquettes courantes s'affichent dès le
  * focus ; la frappe filtre sans tenir compte des accents (« etat vend » →
- * « État civil — vendeur »). ↑ ↓ pour choisir, Entrée ou Tab pour valider,
- * Échap pour fermer : la main revient au document, pour enchaîner les
- * surlignages.
+ * « État civil — vendeur »). Entrée valide le texte tel qu'il est saisi ; Tab
+ * reprend la suggestion (la première, ou celle choisie avec ↑ ↓) dans le
+ * champ, et Entrée la valide alors. Échap ferme la liste : la main revient au
+ * document, pour enchaîner les surlignages.
  */
 export function LabelInput({ value, onChange, onCommit, labels, frequent, recent, placeholder, autoFocus, className }: Props) {
   const ref = useRef<HTMLInputElement>(null);
@@ -31,6 +32,9 @@ export function LabelInput({ value, onChange, onCommit, labels, frequent, recent
   const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
 
   const items = open ? suggest(value, labels, frequent, recent) : [];
+  // Suggestion que Tab reprendrait : celle choisie aux flèches, sinon la
+  // première qui diffère du texte saisi.
+  const tabIdx = hi >= 0 ? hi : value.trim() ? items.findIndex((l) => l !== value) : -1;
 
   useEffect(() => {
     if (autoFocus) ref.current?.focus();
@@ -80,7 +84,7 @@ export function LabelInput({ value, onChange, onCommit, labels, frequent, recent
         onChange={(e) => {
           onChange(e.target.value);
           setOpen(true);
-          setHi(e.target.value.trim() ? 0 : -1);
+          setHi(-1);
         }}
         onBlur={(e) => {
           setOpen(false);
@@ -100,8 +104,16 @@ export function LabelInput({ value, onChange, onCommit, labels, frequent, recent
             e.preventDefault();
             if (hi >= 0 && items[hi]) choose(items[hi]);
             else e.currentTarget.blur();
-          } else if (e.key === 'Tab') {
-            if (hi >= 0 && items[hi]) choose(items[hi]);
+          } else if (e.key === 'Tab' && !e.shiftKey) {
+            // Reprend la suggestion dans le champ, sans quitter celui-ci :
+            // Entrée la valide ensuite.
+            const l = items[tabIdx];
+            if (l && l !== value) {
+              e.preventDefault();
+              onChange(l);
+              setOpen(false);
+              setHi(-1);
+            }
           } else if (e.key === 'Escape') {
             if (open && items.length) setOpen(false);
             else e.currentTarget.blur();
@@ -122,11 +134,13 @@ export function LabelInput({ value, onChange, onCommit, labels, frequent, recent
               role="option"
               aria-selected={i === hi}
               className={i === hi ? 'label-suggest-hi' : undefined}
-              onMouseEnter={() => setHi(i)}
               onClick={() => choose(l)}
             >
               {l}
-              {recent.includes(l) && <span className="label-suggest-recent">récente</span>}
+              <span className="label-suggest-recent">
+                {recent.includes(l) && 'récente'}
+                {i === tabIdx && <kbd className="label-suggest-tab">Tab</kbd>}
+              </span>
             </li>
           ))}
         </ul>

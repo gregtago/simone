@@ -52,8 +52,9 @@ IA ne parcourt seule des centaines de pages.
   vendeur ») : le champ prend la main dès la capture et propose d'emblée les
   étiquettes courantes ; la frappe filtre quelque 170 étiquettes toutes
   faites, sans tenir compte des accents (« etat acq » → « État civil —
-  acquéreur »). ↑ ↓ pour choisir, Entrée ou Tab pour valider : la main revient
-  au document. Chaque document peut aussi recevoir sa nature (« Titre de
+  acquéreur »). Entrée valide le texte tel qu'il est saisi ; Tab reprend la
+  suggestion (la première, ou celle choisie avec ↑ ↓) et Entrée la valide
+  alors : la main revient au document. Chaque document peut aussi recevoir sa nature (« Titre de
   propriété », « État daté »). Les étiquettes employées sont mémorisées sur le
   poste et reproposées en tête. Le paragraphe à ajouter au skill de lecture
   des exports est dans `docs/skill-lecture-extractions-etiquettes.md`. À l'export, elles figurent sous la forme `Nature du document : …`
