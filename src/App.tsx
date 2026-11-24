@@ -66,6 +66,7 @@ export default function App() {
   );
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [opening, setOpening] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
 
@@ -219,6 +220,7 @@ export default function App() {
       for (const file of Array.from(files)) {
         if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') continue;
         try {
+          setOpening(file.name);
           const buf = await file.arrayBuffer();
           const pdf = await loadPdf(buf);
           added.push({ id: crypto.randomUUID(), name: file.name, pdf, numPages: pdf.numPages, file });
@@ -231,6 +233,7 @@ export default function App() {
         setActiveId(added[added.length - 1].id);
         showToast(added.length > 1 ? `${added.length} PDF ouverts` : 'PDF ouvert');
       }
+      setOpening(null);
       setBusy(false);
     },
     [showToast],
@@ -585,6 +588,11 @@ export default function App() {
                 {extracting ? 'Extraction…' : 'Extraire en PDF'}
               </button>
               <button className="btn-ghost" onClick={() => setPageSelect(false)} aria-label="Fermer">✕</button>
+            </div>
+          )}
+          {opening && (
+            <div className="viewer-loading" role="status">
+              <span className="spinner" /> Ouverture de {opening}…
             </div>
           )}
           {active ? (

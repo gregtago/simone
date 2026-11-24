@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, PageViewport } from 'pdfjs-dist';
 import type { TextContent } from 'pdfjs-dist/types/src/display/api';
 import type { Rect, Tool } from '../lib/types';
@@ -26,8 +26,12 @@ interface Props {
   highlights: PageHighlight[];
   selectMode: boolean;
   selected: boolean;
-  onToggleSelect: () => void;
+  onToggleSelect: (page: number) => void;
   onSelect: (p: SelectionPayload) => void;
+  /** Format de la 1re page (échelle 1) : réserve la place avant le rendu. */
+  defaultSize: { w: number; h: number } | null;
+  /** Conteneur défilant : seules les pages proches de sa zone visible sont rendues. */
+  root: HTMLElement | null;
 }
 
 // Largeur du trait de surligneur, en pixels du canvas rendu.
@@ -35,31 +39,58 @@ const BRUSH = 22;
 // En dessous de ce déplacement, c'est un simple clic : on n'extrait rien.
 const MIN_DRAG = 5;
 
-export function PageView({ pdf, pageNumber, scale, tool, highlights, selectMode, selected, onToggleSelect, onSelect }: Props) {
+export const PageView = memo(function PageView({
+  pdf, pageNumber, scale, tool, highlights, selectMode, selected, onToggleSelect, onSelect, defaultSize, root,
+}: Props) {
+  const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef<HTMLCanvasElement>(null);
   const currentHlRef = useRef<HTMLDivElement>(null);
   const dataRef = useRef<{ viewport: PageViewport; textContent: TextContent; pageProxy: PDFPageProxy } | null>(null);
-  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  // Format réel de la page (échelle 1), connu une fois la page chargée.
+  const [base, setBase] = useState<{ w: number; h: number } | null>(null);
+  const [near, setNear] = useState(false);
+  const [rendered, setRendered] = useState(false);
+  const size = base ?? defaultSize;
+  const w = size ? Math.floor(size.w * scale) : 0;
+  const h = size ? Math.floor(size.h * scale) : 0;
   const draggingRef = useRef(false);
   const pointsRef = useRef<{ x: number; y: number }[]>([]);
 
-  // Rendu de la page.
+  // La page est-elle dans la zone visible, ou à moins d'un écran de celle-ci ?
   useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !root) return;
+    const io = new IntersectionObserver((entries) => setNear(entries[entries.length - 1].isIntersecting), {
+      root,
+      rootMargin: '100% 0px',
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [root]);
+
+  // Rendu de la page — seulement si elle est proche de l'écran. Un document
+  // lourd n'est donc jamais dessiné en entier : les pages éloignées ne sont
+  // qu'un emplacement vide, et leur image est libérée dès qu'on s'en éloigne.
+  useEffect(() => {
+    if (!near) return;
     let cancelled = false;
     let renderTask: { cancel: () => void } | null = null;
+    const canvas = canvasRef.current;
 
     (async () => {
       const page = await pdf.getPage(pageNumber);
       if (cancelled) return;
+      const unit = page.getViewport({ scale: 1 });
+      setBase((b) => (b && b.w === unit.width && b.h === unit.height ? b : { w: unit.width, h: unit.height }));
       const viewport = page.getViewport({ scale });
-      const canvas = canvasRef.current;
       if (!canvas) return;
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      setDims({ w: canvas.width, h: canvas.height });
-      const ctx = canvas.getContext('2d')!;
-      const task = page.render({ canvasContext: ctx, viewport });
+      // Dessin hors écran, puis recopie d'un seul coup : l'ancienne image
+      // reste affichée pendant un changement de zoom, sans page blanche.
+      const off = document.createElement('canvas');
+      off.width = Math.floor(viewport.width);
+      off.height = Math.floor(viewport.height);
+      const task = page.render({ canvasContext: off.getContext('2d')!, viewport });
       renderTask = task;
       try {
         await task.promise;
@@ -67,25 +98,40 @@ export function PageView({ pdf, pageNumber, scale, tool, highlights, selectMode,
         return; // annulé (re-render)
       }
       if (cancelled) return;
+      canvas.width = off.width;
+      canvas.height = off.height;
+      canvas.getContext('2d')!.drawImage(off, 0, 0);
+      off.width = off.height = 0;
+      setRendered(true);
       const textContent = await page.getTextContent();
       if (cancelled) return;
       dataRef.current = { viewport, textContent, pageProxy: page };
-    })();
+    })().catch(() => {});
 
     return () => {
       cancelled = true;
       renderTask?.cancel();
+      dataRef.current = null;
     };
-  }, [pdf, pageNumber, scale]);
+  }, [pdf, pageNumber, scale, near]);
+
+  // Page sortie de la zone : on rend la mémoire de son image.
+  useEffect(() => {
+    if (near) return;
+    const canvas = canvasRef.current;
+    if (canvas) canvas.width = canvas.height = 0;
+    setRendered(false);
+    pdf.getPage(pageNumber).then((p) => p.cleanup()).catch(() => {});
+  }, [near, pdf, pageNumber]);
 
   // Le calque de peinture suit la taille de la page.
   useEffect(() => {
     const pc = paintRef.current;
-    if (pc && dims) {
-      pc.width = dims.w;
-      pc.height = dims.h;
+    if (pc) {
+      pc.width = w;
+      pc.height = h;
     }
-  }, [dims]);
+  }, [w, h]);
 
   const pointFromEvent = (e: React.PointerEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -218,8 +264,9 @@ export function PageView({ pdf, pageNumber, scale, tool, highlights, selectMode,
   }, [currentKey]);
 
   return (
-    <div className="page-wrap" style={dims ? { width: dims.w, height: dims.h } : undefined}>
-      <canvas ref={canvasRef} className="page-canvas" />
+    <div ref={wrapRef} className="page-wrap" style={size ? { width: w, height: h } : undefined}>
+      <canvas ref={canvasRef} className="page-canvas" style={{ width: w, height: h }} />
+      {near && !rendered && <div className="page-loading"><span className="spinner" /> Chargement de la page…</div>}
       {highlights.length > 0 && (
         <div className="hl-layer">
           {highlights.map((h) =>
@@ -243,11 +290,11 @@ export function PageView({ pdf, pageNumber, scale, tool, highlights, selectMode,
         onPointerUp={onPointerUp}
       />
       {selectMode && (
-        <div className={`page-select${selected ? ' page-selected' : ''}`} onClick={onToggleSelect}>
+        <div className={`page-select${selected ? ' page-selected' : ''}`} onClick={() => onToggleSelect(pageNumber)}>
           <span className={`page-check${selected ? ' on' : ''}`}>{selected ? '✓' : ''}</span>
         </div>
       )}
       <div className="page-label">Page {pageNumber}</div>
     </div>
   );
-}
+});
