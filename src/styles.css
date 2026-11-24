@@ -212,7 +212,18 @@ button { font-family: inherit; cursor: pointer; }
 .welcome { height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .welcome-card {
   max-width: 420px; text-align: center; background: var(--bg);
-  border: 1px solid var(--border); border-radius: 10px; padding: 28px 26px;
+  border: 1.5px dashed var(--border-strong); border-radius: 10px; padding: 36px 34px;
+}
+/* Voile affiché pendant qu'un fichier survole la fenêtre. */
+.drop-overlay {
+  position: fixed; inset: 0; z-index: 100; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--bg-subtle) 82%, transparent);
+  border: 3px dashed var(--border-strong);
+}
+.drop-card {
+  background: var(--bg); border: 1px solid var(--border-strong); border-radius: 10px;
+  padding: 18px 26px; font-size: 15px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 .welcome-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
 .welcome-p { font-size: 13px; line-height: 1.5; color: var(--text-2); margin: 0 0 18px; }
