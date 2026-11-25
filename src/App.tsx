@@ -213,7 +213,7 @@ export default function App() {
   }, []);
 
   const openFiles = useCallback(
-    async (files: FileList | null) => {
+    async (files: FileList | File[] | null) => {
       if (!files || files.length === 0) return;
       setBusy(true);
       const added: PdfDoc[] = [];
@@ -238,6 +238,51 @@ export default function App() {
     },
     [showToast],
   );
+
+  // Dépôt de fichiers par glisser-déposer, n'importe où dans la fenêtre : à
+  // l'accueil comme par-dessus un document déjà ouvert (les PDF s'ajoutent).
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    const hasFiles = (e: DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files');
+    let depth = 0;
+    const onEnter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth++;
+      setDragging(true);
+    };
+    const onOver = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      // Sans cela, le navigateur ouvrirait le PDF à la place de Simone.
+      e.preventDefault();
+      e.dataTransfer!.dropEffect = 'copy';
+    };
+    const onLeave = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDragging(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      const files = Array.from(e.dataTransfer!.files);
+      const pdfs = files.filter((f) => f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf');
+      if (pdfs.length) openFiles(pdfs);
+      else if (files.length) showToast('Seuls les fichiers PDF peuvent être ouverts');
+    };
+    window.addEventListener('dragenter', onEnter);
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragenter', onEnter);
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [openFiles, showToast]);
 
   const closeDoc = useCallback(
     (id: string) => {
@@ -610,7 +655,8 @@ export default function App() {
           ) : (
             <div className="welcome">
               <div className="welcome-card">
-                <div className="welcome-title">Ouvrez un ou plusieurs PDF</div>
+                <div className="welcome-title">Déposez vos PDF ici</div>
+                <p className="welcome-p">Glissez un ou plusieurs fichiers dans la fenêtre, ou choisissez-les.</p>
                 <button className="btn-primary" onClick={() => fileRef.current?.click()}>Ouvrir des PDF</button>
               </div>
             </div>
@@ -632,6 +678,12 @@ export default function App() {
       </main>
 
       {showIntro && <Tutorial onClose={dismissIntro} />}
+
+      {dragging && (
+        <div className="drop-overlay">
+          <div className="drop-card">Déposez vos PDF pour les ouvrir</div>
+        </div>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>
